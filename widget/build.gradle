@@ -1,0 +1,45 @@
+apply plugin: 'android-library'
+apply plugin: 'maven'
+
+version '0.0.1'
+group 'com.sea_monster'
+android {
+    compileSdkVersion 19
+    buildToolsVersion '19.0.3'
+
+    defaultConfig {
+        minSdkVersion 10
+        targetSdkVersion 19
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            runProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+}
+
+
+
+dependencies {
+    compile 'com.android.support:appcompat-v7:19.+'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile project(':core')
+}
+
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri('http://192.168.237.152:8081/nexus/content/repositories/thirdparty/')) {
+                authentication(userName: 'admin', password: 'admin123')
+            }
+            snapshotRepository(url: uri('http://192.168.237.152:8081/nexus/content/repositories/thirdparty/')) {
+                authentication(userName: 'admin', password: 'admin123')
+            }
+        }
+    }
+}
+

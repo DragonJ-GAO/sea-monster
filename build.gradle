@@ -1,0 +1,18 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        maven { url "http://192.168.237.152:8081/nexus/content/repositories/thirdparty/" }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.9.+'
+    }
+}
+
+allprojects {
+    repositories {
+        maven { url "http://192.168.237.152:8081/nexus/content/repositories/thirdparty/" }
+        mavenCentral()
+    }
+}
