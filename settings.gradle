@@ -1,1 +1,1 @@
-include ':core', ':widget',':sea-monster'
+include ':core', ':widget'

@@ -221,45 +221,55 @@ public class ResourceCompressHandler implements IResourceCompressHandler {
 					break;
 				}
 
-				int sampleWidth = request.getOptions().getSrcWidth() / sampleSize;
-				int sampleHeight = request.getOptions().getSrcHeight() / sampleSize;
-				int x = 0, y = 0;
-				if (request.getOptions().getThumbWidth() > sampleWidth && request.getOptions().getThumbHeight() > sampleHeight) {
-					height = sampleHeight;
-					width = sampleWidth;
-				} else if (request.getOptions().getThumbWidth() > sampleWidth) {
-					height = (sampleWidth * request.getOptions().getThumbHeight()) / request.getOptions().getThumbWidth();
-					width = sampleWidth;
-					x = 0;
-					y = sampleHeight - request.getOptions().getThumbHeight();
-					y >>= 1;
-				} else if (request.getOptions().getThumbHeight() > sampleHeight) {
-					width = (sampleHeight * request.getOptions().getThumbWidth()) / request.getOptions().getThumbHeight();
-					height = sampleHeight;
-					y = 0;
-					x = sampleWidth - request.getOptions().getThumbWidth();
-					x >>= 1;
-				} else {
-					int widthMix = request.getOptions().getThumbWidth() * sampleHeight;
-					int heightMix = request.getOptions().getThumbHeight() * sampleWidth;
-					if (widthMix == heightMix) {
-						width = request.getOptions().getThumbWidth();
-						height = request.getOptions().getThumbHeight();
+                int x = 0, y = 0;
 
-					} else if (widthMix > heightMix) {
-						height = heightMix / request.getOptions().getThumbWidth();
-						width = request.getOptions().getThumbWidth();
-						y = sampleHeight - height;
-						y >>= 1;
-					} else {
-						width = widthMix / request.getOptions().getThumbHeight();
-						height = request.getOptions().getThumbHeight();
-						x = sampleWidth - width;
-						x >>= 1;
-					}
-				}
+                if (request.getOptions().getThumbWidth() > bitmap.getWidth() && request.getOptions().getThumbHeight() > bitmap.getHeight()) {
+                    height = bitmap.getHeight();
+                    width = bitmap.getWidth();
+                } else if (request.getOptions().getThumbWidth() > bitmap.getWidth()) {
+                    height = (bitmap.getWidth() * request.getOptions().getThumbHeight()) / request.getOptions().getThumbWidth();
+                    width = bitmap.getWidth();
+                    x = 0;
+                    y = bitmap.getHeight() - request.getOptions().getThumbHeight();
+                    y >>= 1;
+                } else if (request.getOptions().getThumbHeight() > bitmap.getHeight()) {
+                    width = (bitmap.getHeight() * request.getOptions().getThumbWidth()) / request.getOptions().getThumbHeight();
+                    height = bitmap.getHeight();
+                    y = 0;
+                    x = bitmap.getWidth() - request.getOptions().getThumbWidth();
+                    x >>= 1;
 
-				result = Bitmap.createBitmap(bitmap, x, y, sampleWidth - x, sampleHeight - y, matrix, true);
+                } else {
+
+                    int widthMix = request.getOptions().getThumbWidth() * bitmap.getHeight();
+                    int heightMix = request.getOptions().getThumbHeight() * bitmap.getWidth();
+                    if (widthMix == heightMix) {
+                        width = request.getOptions().getThumbWidth();
+                        height = request.getOptions().getThumbHeight();
+
+                    } else if (widthMix > heightMix) {
+                        height = heightMix / request.getOptions().getThumbWidth();
+                        width = request.getOptions().getThumbWidth();
+                        y = bitmap.getHeight() - height;
+                        y >>= 1;
+                    } else {
+                        width = widthMix / request.getOptions().getThumbHeight();
+                        height = request.getOptions().getThumbHeight();
+                        x = bitmap.getWidth() - width;
+                        x >>= 1;
+                    }
+                }
+
+
+                float scale = 0;
+                if (width > height)
+                    scale = (float) width / bitmap.getWidth();
+                else
+                    scale = (float) height / bitmap.getHeight();
+
+                matrix.postScale(scale, scale);
+                result = Bitmap.createBitmap(bitmap, x, y, bitmap.getWidth() - (x << 1), bitmap.getHeight() - (y << 1), matrix, true);
+
 			} catch (Exception e) {
 				request.onFailure(new BaseException(e));
 			}

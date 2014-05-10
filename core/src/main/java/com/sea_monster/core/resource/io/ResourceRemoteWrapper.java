@@ -138,6 +138,8 @@ public class ResourceRemoteWrapper extends Observable {
                 public void onFailure(AbstractHttpRequest<File> request, BaseException e) {
                     onRequestMapping.remove(img);
                     fileSysHandler.delFile(img.getUri());
+                    setChanged();
+                    ResourceRemoteWrapper.this.notifyObservers(img);
                     e.printStackTrace();
                 }
             };
@@ -172,6 +174,8 @@ public class ResourceRemoteWrapper extends Observable {
             public void onFailure(AbstractHttpRequest<File> request, BaseException e) {
                 onRequestMapping.remove(img);
                 fileSysHandler.delFile(img.getUri());
+                setChanged();
+                ResourceRemoteWrapper.this.notifyObservers(img);
                 callback.onFailure(request, e);
                 e.printStackTrace();
             }

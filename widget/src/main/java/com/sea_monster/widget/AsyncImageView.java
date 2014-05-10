@@ -35,7 +35,7 @@ import uk.co.senab.bitmapcache.CacheableImageView;
  * @version 1.0
  * @since JDK1.5
  */
-public class AsyncImageView extends CacheableImageView implements Observer{
+public class AsyncImageView extends CacheableImageView implements Observer {
 
     static final ExecutorService mMultiThreadExecutor;
     static final boolean DEBUG = true;
@@ -62,17 +62,27 @@ public class AsyncImageView extends CacheableImageView implements Observer{
     @Override
     public void update(Observable observable, Object data) {
 
-        if(mResource instanceof  Resource){
+        if (mResource instanceof Resource) {
             Log.d(TAG, "update Resource");
-            Resource resource = (Resource)data;
-            if(data.equals(resource)||data.equals(resource.getOrientaion())){
-                refreshResouce();
+            Resource resource = (Resource) data;
+            if (data.equals(resource) || data.equals(resource.getOrientaion())) {
+                post(new Runnable() {
+                    @Override
+                    public void run() {
+                        refreshResouce();
+                    }
+                });
             }
-        }else if(mResource instanceof CompressedResource) {
+        } else if (mResource instanceof CompressedResource) {
             Log.d(TAG, "update CompressedResource");
             Resource resource = ((CompressedResource) data).getOriResource();
             if (data.equals(resource) || data.equals(resource.getOrientaion())) {
-                refreshResouce();
+                post(new Runnable() {
+                    @Override
+                    public void run() {
+                        refreshResouce();
+                    }
+                });
             }
         }
 
