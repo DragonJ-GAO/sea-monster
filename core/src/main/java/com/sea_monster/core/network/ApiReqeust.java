@@ -2,7 +2,6 @@ package com.sea_monster.core.network;
 
 import android.util.Log;
 
-
 import com.sea_monster.core.exception.BaseException;
 import com.sea_monster.core.network.packer.AbsEntityPacker;
 import com.sea_monster.core.network.parser.IEntityParser;
@@ -11,6 +10,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.NameValuePair;
 
 import java.io.InputStream;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,7 +19,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
-public abstract class ApiReqeust<T extends BaseModel> implements ApiCallback<T> {
+public abstract class ApiReqeust<T extends Serializable> implements ApiCallback<T> {
 	private URI uri;
 	private List<NameValuePair> params;
 	private InputStream resStream;

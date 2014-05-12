@@ -1,17 +1,19 @@
 package com.sea_monster.core.network.packer;
 
-import java.io.IOException;
-import java.io.StringWriter;
+import com.google.gson.stream.JsonWriter;
+import com.sea_monster.core.exception.InternalException;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.protocol.HTTP;
 import org.json.JSONException;
-import com.google.gson.stream.JsonWriter;
-import com.sea_monster.core.exception.InternalException;
-import com.sea_monster.core.network.BaseModel;
 
-public abstract class JsonObjectPacker<T extends BaseModel> extends AbsEntityPacker<T>
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.StringWriter;
+
+
+public abstract class JsonObjectPacker<T extends Serializable> extends AbsEntityPacker<T>
 {
 	public JsonObjectPacker(T model)
 	{
@@ -29,7 +31,6 @@ public abstract class JsonObjectPacker<T extends BaseModel> extends AbsEntityPac
 
 	protected final void packData(T object, JsonWriter jsonWriter) throws IOException, InternalException, JSONException
 	{
-		//JsonWriter jsonWriter = new JsonWriter(new OutputStreamWriter(new ByteArrayOutputStream(), "UTF-8"));
 		this.pack(jsonWriter, object);
 	}
 

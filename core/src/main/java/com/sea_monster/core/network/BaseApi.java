@@ -8,6 +8,7 @@ import com.sea_monster.core.exception.BaseException;
 import org.apache.http.NameValuePair;
 
 import java.io.InputStream;
+import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.util.ArrayList;
@@ -61,7 +62,7 @@ public class BaseApi {
         handler.cancelRequest(callId);
     }
 
-    public void cancelReqeust(ApiCallback<BaseModel> callback) {
+    public void cancelReqeust(ApiCallback callback) {
         List<AbstractHttpRequest> requests = null;
         synchronized (callMap) {
             for (WeakReference<ApiCallback> weakCallback : callMap.keySet()) {
@@ -81,7 +82,7 @@ public class BaseApi {
         }
     }
 
-    protected class DefaultApiReqeust<T extends BaseModel> extends ApiReqeust<T> {
+    protected class DefaultApiReqeust<T extends Serializable> extends ApiReqeust<T> {
         private WeakReference<ApiCallback<T>> weakCallback;
 
         public DefaultApiReqeust(int method, URI uri, ApiCallback<T> callback) {

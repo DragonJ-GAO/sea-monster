@@ -1,5 +1,7 @@
 package com.sea_monster.core.network;
 
-public interface ApiCallback<T extends BaseModel> extends
+import java.io.Serializable;
+
+public interface ApiCallback<T extends Serializable> extends
 		RequestCallback<T> {
 }
