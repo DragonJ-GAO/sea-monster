@@ -1,7 +1,7 @@
 apply plugin: 'android-library'
 apply plugin: 'maven'
 
-version '0.0.13'
+version '0.0.15'
 group 'com.sea_monster'
 
 android {
