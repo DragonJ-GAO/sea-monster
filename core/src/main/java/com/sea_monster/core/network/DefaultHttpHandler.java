@@ -3,6 +3,7 @@ package com.sea_monster.core.network;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.util.Log;
 
 import com.sea_monster.core.common.Const;
@@ -16,6 +17,7 @@ import com.sea_monster.core.exception.ParseException;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.params.HttpClientParams;
@@ -50,6 +52,8 @@ import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -269,7 +273,7 @@ public class DefaultHttpHandler implements HttpHandler {
 
 				adapter = (BasicPooledConnAdapter) context.getAttribute(ExecutionContext.HTTP_CONNECTION);
 
-				if (response.getStatusLine().getStatusCode() == 200) {
+				if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 					Header lenHeader = response.getFirstHeader(HTTP.CONTENT_LEN);
 					if (lenHeader != null) {
 						long length = Long.parseLong(lenHeader.getValue());
@@ -299,7 +303,29 @@ public class DefaultHttpHandler implements HttpHandler {
 						result = (T) request.getParser().parse(response.getEntity(), request.getStatusCallback());
 					}
 					request.onComplete(result);
-				} else {
+				} else if(response.getStatusLine().getStatusCode() == HttpStatus.SC_MOVED_PERMANENTLY || response.getStatusLine().getStatusCode() == HttpStatus.SC_MOVED_TEMPORARILY) {
+                    Header locationHeader = response.getFirstHeader("location");
+                    if (locationHeader != null) {
+                        String location  = locationHeader.getValue();
+                        System.out.println("The page was redirected to:" + location);
+                        try {
+                            request.setUri(new URI(location));
+                            run();
+                            return;
+                        } catch (URISyntaxException e) {
+                            request.onFailure(new HttpException(e));
+                        }
+                    } else {
+                        System.err.println("Location field value is null.");
+                        Log.e("HTTP", EntityUtils.toString(response.getEntity()));
+                        response.getEntity().consumeContent();
+                        InternalException exception = new InternalException(response.getStatusLine().getStatusCode(), uriRequest.getRequestLine().toString());
+
+                        int statue = response.getStatusLine().getStatusCode();
+
+                        request.onFailure(exception);
+                    }
+                }else {
 					Log.e("HTTP", EntityUtils.toString(response.getEntity()));
 					response.getEntity().consumeContent();
 					InternalException exception = new InternalException(response.getStatusLine().getStatusCode(), uriRequest.getRequestLine().toString());
