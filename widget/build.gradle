@@ -5,7 +5,7 @@ version '0.0.4'
 group 'com.sea_monster'
 android {
     compileSdkVersion 19
-    buildToolsVersion '19.0.3'
+    buildToolsVersion '19.1.0'
 
     defaultConfig {
         minSdkVersion 10
@@ -15,7 +15,7 @@ android {
     }
     buildTypes {
         release {
-            runProguard true
+            runProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
@@ -24,7 +24,7 @@ android {
 
 
 dependencies {
-    compile 'com.android.support:appcompat-v7:19.+'
+    compile 'com.android.support:support-v4:+'
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':core')
     compile 'com.github.chrisbanes.bitmapcache:library:2.3@jar'
@@ -35,10 +35,10 @@ dependencies {
 uploadArchives {
     repositories {
         mavenDeployer {
-            repository(url: uri('http://192.168.237.152:8081/nexus/content/repositories/thirdparty/')) {
+            repository(url: uri('http://localhost:8081/nexus/content/repositories/thirdparty/')) {
                 authentication(userName: 'admin', password: 'admin123')
             }
-            snapshotRepository(url: uri('http://192.168.237.152:8081/nexus/content/repositories/thirdparty/')) {
+            snapshotRepository(url: uri('http://localhost:8081/nexus/content/repositories/thirdparty/')) {
                 authentication(userName: 'admin', password: 'admin123')
             }
         }

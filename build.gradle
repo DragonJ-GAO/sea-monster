@@ -2,17 +2,17 @@
 
 buildscript {
     repositories {
-        maven { url "http://192.168.237.152:8081/nexus/content/repositories/thirdparty/" }
+        maven { url "http://localhost:8081/nexus/content/repositories/thirdparty/" }
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.9.+'
+        classpath 'com.android.tools.build:gradle:0.12.+'
     }
 }
 
 allprojects {
     repositories {
-        maven { url "http://192.168.237.152:8081/nexus/content/repositories/thirdparty/" }
+        maven { url "http://localhost:8081/nexus/content/repositories/thirdparty/" }
         mavenCentral()
     }
 }
