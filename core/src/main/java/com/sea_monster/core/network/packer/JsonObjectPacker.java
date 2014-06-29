@@ -1,6 +1,8 @@
 package com.sea_monster.core.network.packer;
+import android.annotation.TargetApi;
+import android.os.Build;
+import android.util.JsonWriter;
 
-import com.google.gson.stream.JsonWriter;
 import com.sea_monster.core.exception.InternalException;
 
 import org.apache.http.HttpEntity;
@@ -34,7 +36,9 @@ public abstract class JsonObjectPacker<T extends Serializable> extends AbsEntity
 		this.pack(jsonWriter, object);
 	}
 
-	public HttpEntity pack() throws IOException, InternalException, JSONException
+
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    public HttpEntity pack() throws IOException, InternalException, JSONException
 	{
 		jsonWriter = new JsonWriter(new StringWriter());
 

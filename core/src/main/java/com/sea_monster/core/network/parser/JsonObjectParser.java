@@ -1,21 +1,20 @@
 package com.sea_monster.core.network.parser;
 
+import android.util.JsonReader;
+import android.util.MalformedJsonException;
 
-import com.google.gson.JsonParseException;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.MalformedJsonException;
 import com.sea_monster.core.exception.InternalException;
 import com.sea_monster.core.exception.ParseException;
 import com.sea_monster.core.network.StatusCallback;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.protocol.HTTP;
+import org.json.JSONException;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.zip.GZIPInputStream;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.protocol.HTTP;
-import org.json.JSONException;
 
 
 public abstract class JsonObjectParser<T> implements IEntityParser<T> {
@@ -50,10 +49,7 @@ public abstract class JsonObjectParser<T> implements IEntityParser<T> {
             throw new ParseException(e);
         } catch (IllegalStateException e) {
             throw new ParseException(e);
-        } catch (JsonParseException e) {
-            e.printStackTrace();
-            throw new ParseException(e);
-        } finally {
+        }  finally {
             inputStream.close();
         }
 

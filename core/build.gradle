@@ -27,16 +27,15 @@ dependencies {
     compile 'com.android.support:support-v4:+'
     compile 'com.github.chrisbanes.bitmapcache:library:2.3@jar'
     compile 'com.jakewharton:disklrucache:2.0.2@jar'
-    compile 'com.google.code.gson:gson:2.2.+'
 }
 
 uploadArchives {
     repositories {
         mavenDeployer {
-            repository(url: uri('http://192.168.237.152:8081/nexus/content/repositories/thirdparty/')) {
+            repository(url: uri('http://localhost:8081/nexus/content/repositories/thirdparty/')) {
                 authentication(userName: 'admin', password: 'admin123')
             }
-            snapshotRepository(url: uri('http://192.168.237.152:8081/nexus/content/repositories/thirdparty/')) {
+            snapshotRepository(url: uri('http://localhost:8081/nexus/content/repositories/thirdparty/')) {
                 authentication(userName: 'admin', password: 'admin123')
             }
         }
