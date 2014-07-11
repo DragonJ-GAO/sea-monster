@@ -157,7 +157,8 @@ public class AsyncImageView extends CacheableImageView implements Observer {
 
         if (status == STATUS_EMPTY) {
             mAttachedRunnable = null;
-            resetForRequest(true);
+            cancelRequest();
+            setImageDrawable(mDefaultDrawable);
             if (ResourceManager.getInstance().containsInMemoryCache(mResource)) {
                 Log.d(TAG, "containsInMemoryCache");
                 final BitmapDrawable drawable = ResourceManager.getInstance().getDrawable(mResource);
@@ -197,13 +198,6 @@ public class AsyncImageView extends CacheableImageView implements Observer {
         }
     }
 
-    private void resetForRequest(final boolean clearDrawable) {
-        cancelRequest();
-
-        if (clearDrawable) {
-            setImageDrawable(null);
-        }
-    }
 
     public void cancelRequest() {
         if (null != mCurrentRunnable) {
