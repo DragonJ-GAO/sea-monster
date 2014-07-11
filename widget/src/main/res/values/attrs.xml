@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="AsyncImageView">
-        <attr name="def_drawable" format="reference" />
+        <attr name="defDrawable" format="reference" />
     </declare-styleable>
 </resources>

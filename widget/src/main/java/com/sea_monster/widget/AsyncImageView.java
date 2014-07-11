@@ -5,6 +5,7 @@
 package com.sea_monster.widget;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Parcelable;
@@ -128,6 +129,14 @@ public class AsyncImageView extends CacheableImageView implements Observer {
 
     public AsyncImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.AsyncImageView);
+
+        int resId = a.getResourceId(R.styleable.AsyncImageView_defDrawable,0);
+
+        if(resId!=0)
+            mDefaultDrawable = getResources().getDrawable(resId);
+
+        a.recycle();
     }
 
 
