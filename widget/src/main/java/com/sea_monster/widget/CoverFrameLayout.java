@@ -98,8 +98,21 @@ public class CoverFrameLayout extends FrameLayout {
     public boolean onInterceptTouchEvent(MotionEvent ev) {
         if (ev.getAction() == MotionEvent.ACTION_DOWN) {
             Rect rect = new Rect();
+            int offsetX = 0;
+            int offsetY = 0;
+
+            View tempView = mTriggerView;
+
+            while(tempView.getParent() != this){
+                offsetX+=tempView.getLeft();
+                offsetY+=tempView.getTop();
+                if(tempView.getParent() instanceof View){
+                    tempView = (View)tempView.getParent();
+                }
+            }
+
             mTriggerView.getHitRect(rect);
-            mHasTrigger = rect.contains((int) ev.getX(), (int) ev.getY());
+            mHasTrigger = rect.contains((int) ev.getX()-offsetX, (int) ev.getY()-offsetY);
         }
 
         if (mHasTrigger) {
