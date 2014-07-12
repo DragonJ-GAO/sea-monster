@@ -3,4 +3,9 @@
     <declare-styleable name="AsyncImageView">
         <attr name="defDrawable" format="reference" />
     </declare-styleable>
+    <declare-styleable name="CoverFrameLayout">
+        <attr name="coverView" format="reference"/>
+        <attr name="triggerView" format="reference"/>
+        <attr name="triggerLimit" format="integer"/>
+    </declare-styleable>
 </resources>
