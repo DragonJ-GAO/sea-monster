@@ -3,15 +3,17 @@ package com.sea_monster.core.resource.compress;
 import com.sea_monster.core.resource.model.CompressOptions;
 import com.sea_monster.core.resource.model.Resource;
 
+import java.io.InputStream;
+
 public abstract class AbstractCompressRequest implements CompressRequestProcess {
 
 	private Resource resource;
-	private String path;
+	private InputStream stream;
 	private CompressOptions options;
 
-	public AbstractCompressRequest(Resource resource, String path, CompressOptions options) {
+	public AbstractCompressRequest(Resource resource, InputStream stream, CompressOptions options) {
 		this.resource = resource;
-		this.path = path;
+		this.stream = stream;
 		this.options = options;
 	}
 
@@ -19,12 +21,12 @@ public abstract class AbstractCompressRequest implements CompressRequestProcess 
 		return options;
 	}
 
-	public String getPath() {
-		return path;
+	public InputStream getStream() {
+		return stream;
 	}
 
-	public void setPath(String path) {
-		this.path = path;
+	public void setStream(InputStream stream) {
+		this.stream = stream;
 	}
 
 	public void setOptions(CompressOptions options) {

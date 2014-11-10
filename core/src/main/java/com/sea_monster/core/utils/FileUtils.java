@@ -70,12 +70,13 @@ public class FileUtils {
 					Log.d(TAG, "Created file: " + nomediaFile + " " + String.valueOf(nomediaFile.createNewFile()));
 				} catch (IOException e) {
 					Log.d(TAG, "Unable to create .nomedia file for some reason.", e);
-					throw new IllegalStateException("Unable to create nomedia file.");
+//					throw new IllegalStateException("Unable to create nomedia file.");
 				}
 			}
 
 			if (!(storageDirectory.isDirectory() && nomediaFile.exists())) {
-				throw new RuntimeException("Unable to create storage directory and nomedia file.");
+                Log.d(TAG, "Unable to create .nomedia file for some reason.");
+//                throw new RuntimeException("Unable to create storage directory and nomedia file.");
 			}
 		}
 	}

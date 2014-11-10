@@ -1,7 +1,7 @@
 apply plugin: 'android-library'
 apply plugin: 'maven'
 
-version '0.0.7'
+version '0.0.9'
 group 'com.sea_monster'
 android {
     compileSdkVersion 19
@@ -19,6 +19,14 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
+
+    task coreLibJar(type: Jar) {
+        from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    }
+    artifacts {
+        archives coreLibJar
+    }
+
 }
 
 
@@ -35,10 +43,10 @@ dependencies {
 uploadArchives {
     repositories {
         mavenDeployer {
-            repository(url: uri('http://192.168.150.4:8081/nexus/content/repositories/thirdparty/')) {
+            repository(url: uri('http://192.168.151.6:8101/nexus/content/repositories/thirdparty/')) {
                 authentication(userName: 'admin', password: 'admin123')
             }
-            snapshotRepository(url: uri('http://192.168.150.4:8081/nexus/content/repositories/thirdparty/')) {
+            snapshotRepository(url: uri('http://192.168.151.6:8101/nexus/content/repositories/thirdparty/')) {
                 authentication(userName: 'admin', password: 'admin123')
             }
         }

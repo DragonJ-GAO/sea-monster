@@ -171,17 +171,10 @@ public class ResourceCompressHandler implements IResourceCompressHandler {
 			options.inSampleSize = sampleSize;
 
 			try {
-				String path = null;
-				if (request.getResource().getUri().getScheme().equals("file")) {
-					path = request.getResource().getUri().getPath();
-				} else {
-					path = fileSysHandler.getPath(request.getResource().getUri());
-				}
-
 				Bitmap bitmap = null;
 
-				bitmap = BitmapFactory.decodeFile(path, options);
-				Log.d("path", path);
+				bitmap = BitmapFactory.decodeStream(request.getStream(),null, options);
+
 				Matrix matrix = new Matrix();
 
 				int w = bitmap.getWidth();
@@ -313,14 +306,14 @@ public class ResourceCompressHandler implements IResourceCompressHandler {
 			sampleSize = Math.max(sampleW, sampleH);
 		}
 		options.inSampleSize = sampleSize;
-		Log.d("request.getPath()", request.getPath());
+
 		Bitmap bitmap;
 		try {
-			bitmap = BitmapFactory.decodeFile(request.getPath(), options);
+			bitmap = BitmapFactory.decodeStream(request.getStream(), null, options);
 		} catch (OutOfMemoryError e) {
 			e.printStackTrace();
 			options.inSampleSize = options.inSampleSize << 1;
-			bitmap = BitmapFactory.decodeFile(request.getPath(), options);
+			bitmap = BitmapFactory.decodeStream(request.getStream(), null, options);
 		}
 
 		Matrix matrix = new Matrix();

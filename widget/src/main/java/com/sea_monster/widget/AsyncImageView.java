@@ -17,6 +17,7 @@ import com.sea_monster.core.resource.ResourceManager;
 import com.sea_monster.core.resource.model.CompressedResource;
 import com.sea_monster.core.resource.model.Resource;
 
+import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.Observable;
 import java.util.Observer;
@@ -131,9 +132,9 @@ public class AsyncImageView extends CacheableImageView implements Observer {
         super(context, attrs);
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.AsyncImageView);
 
-        int resId = a.getResourceId(R.styleable.AsyncImageView_defDrawable,0);
+        int resId = a.getResourceId(R.styleable.AsyncImageView_defDrawable, 0);
 
-        if(resId!=0)
+        if (resId != 0)
             mDefaultDrawable = getResources().getDrawable(resId);
 
         a.recycle();
@@ -149,7 +150,6 @@ public class AsyncImageView extends CacheableImageView implements Observer {
     }
 
     public void setResource(Resource resource) {
-        Log.d(TAG, "setResource:" + resource.toString());
         final Resource previous = getResource();
         this.mResource = resource;
 
@@ -240,9 +240,14 @@ public class AsyncImageView extends CacheableImageView implements Observer {
             Log.d(TAG, "runImpl");
 
 
+            File file = mManager.getFile(mResource);
+
             final BitmapDrawable diskDrawable = mManager.getDrawable(mResource);
-            Log.d(TAG, "BitmapDrawable");
+
+            if (file.exists())
+                Log.d(TAG, "BitmapDrawable");
             if (null != diskDrawable) {
+                mManager.put(mResource, diskDrawable.getBitmap());
                 Log.d(TAG, "BitmapDrawable not null");
                 if (imageView.status == STATUS_EMPTY && imageView.getResource().equals(mResource)) {
 

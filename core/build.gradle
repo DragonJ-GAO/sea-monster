@@ -1,7 +1,7 @@
 apply plugin: 'android-library'
 apply plugin: 'maven'
 
-version '0.0.18'
+version '0.0.30'
 group 'com.sea_monster'
 
 android {
@@ -32,12 +32,23 @@ dependencies {
 uploadArchives {
     repositories {
         mavenDeployer {
-            repository(url: uri('http://192.168.150.4:8081/nexus/content/repositories/thirdparty/')) {
+            repository(url: uri('http://192.168.151.6:8101/nexus/content/repositories/thirdparty/')) {
                 authentication(userName: 'admin', password: 'admin123')
             }
-            snapshotRepository(url: uri('http://192.168.150.4:8081/nexus/content/repositories/thirdparty/')) {
+            snapshotRepository(url: uri('http://192.168.151.6:8101/nexus/content/repositories/thirdparty/')) {
                 authentication(userName: 'admin', password: 'admin123')
             }
         }
     }
+}
+
+android.libraryVariants.all { variant ->
+    def name = variant.buildType.name
+    if (name.equals(com.android.builder.core.BuilderConstants.DEBUG)) {
+        return; // Skip debug builds.
+    }
+    def task = project.tasks.create "jar${name.capitalize()}", Jar
+    task.dependsOn variant.javaCompile
+    task.from variant.javaCompile.destinationDir
+    artifacts.add('archives', task);
 }

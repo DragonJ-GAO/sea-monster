@@ -94,6 +94,14 @@ public class ResourceRemoteWrapper extends Observable {
         }
     }
 
+    public void put(Resource res, InputStream stream){
+        try {
+            fileSysHandler.store(res.getUri(),stream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public Bitmap getBitmap(Resource res) throws BaseException {
         Bitmap bitmap = null;
 
@@ -164,6 +172,7 @@ public class ResourceRemoteWrapper extends Observable {
         ResRequest resRequest = new ResRequest(img, fileSysHandler, callback) {
             @Override
             public void onComplete(AbstractHttpRequest<File> request, File obj) {
+                Log.d("AbstractHttpRequest","onComplete");
                 setChanged();
                 onRequestMapping.remove(img);
                 callback.onComplete(request, obj);
@@ -172,10 +181,10 @@ public class ResourceRemoteWrapper extends Observable {
 
             @Override
             public void onFailure(AbstractHttpRequest<File> request, BaseException e) {
+                Log.d("AbstractHttpRequest","onFailure");
                 onRequestMapping.remove(img);
                 fileSysHandler.delFile(img.getUri());
                 setChanged();
-                ResourceRemoteWrapper.this.notifyObservers(img);
                 callback.onFailure(request, e);
                 e.printStackTrace();
             }

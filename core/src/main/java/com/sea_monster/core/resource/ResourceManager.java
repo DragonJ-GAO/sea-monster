@@ -1,6 +1,7 @@
 package com.sea_monster.core.resource;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 
@@ -16,6 +17,8 @@ import com.sea_monster.core.resource.model.RequestResource;
 import com.sea_monster.core.resource.model.Resource;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.Observer;
 
@@ -30,6 +33,7 @@ public class ResourceManager {
     private ResourceCacheWrapper mCacheWrapper;
 
     private static ResourceManager sS;
+
 
     public static void init(Context context, ResourceRemoteWrapper remoteWrapper, ResourceCacheWrapper cacheWrapper) {
         sS = new ResourceManager(context, remoteWrapper, cacheWrapper);
@@ -107,19 +111,23 @@ public class ResourceManager {
                 }
             }
         } else if (resource instanceof CompressedResource) {
-            CompressedResource compressedResource = (CompressedResource) resource;
-            if (compressedResource.getOriResource() instanceof LocalResource) {
-                drawable = mCacheWrapper.buildCompareBitmap(compressedResource);
-            } else {
-                if (mRemoteWrapper.exists(compressedResource.getOriResource())) {
+            try {
+                CompressedResource compressedResource = (CompressedResource) resource;
+                if (compressedResource.getOriResource() instanceof LocalResource) {
                     drawable = mCacheWrapper.buildCompareBitmap(compressedResource);
                 } else {
-                    try {
-                        mRemoteWrapper.request(compressedResource.getOriResource());
-                    } catch (URISyntaxException e) {
-                        e.printStackTrace();
+                    if (mRemoteWrapper.exists(compressedResource.getOriResource())) {
+                        drawable = mCacheWrapper.buildCompareBitmap(compressedResource);
+                    } else {
+                        try {
+                            mRemoteWrapper.request(compressedResource.getOriResource());
+                        } catch (URISyntaxException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         } else {
             if (mRemoteWrapper.exists(resource)) {
@@ -144,14 +152,14 @@ public class ResourceManager {
     }
 
     public AbstractHttpRequest<File> requestResource(final Resource resource, StoreStatusCallback callback) throws URISyntaxException {
-        return mRemoteWrapper.request(resource,callback);
+        return mRemoteWrapper.request(resource, callback);
     }
 
     public void cancelRequest(Resource resource) {
         mRemoteWrapper.cancel(resource);
     }
 
-    public BitmapDrawable getCompressBitmap(CompressedResource resource) {
+    public BitmapDrawable getCompressBitmap(CompressedResource resource) throws IOException {
         return mCacheWrapper.buildCompareBitmap(resource);
     }
 
@@ -159,7 +167,16 @@ public class ResourceManager {
         return mCacheWrapper.buildCompareBitmap(resource);
     }
 
-    public void compressImageToFile(final CompressedResource resource, File file) throws BaseException {
+    public void compressImageToFile(final CompressedResource resource, File file) throws IOException {
         mCacheWrapper.getCompressFile(resource, file.getPath());
     }
+
+    public void put(Resource resource, Bitmap bitmap) {
+        mCacheWrapper.put(resource, bitmap);
+    }
+
+    public void put(Resource resource, InputStream stream) {
+        mRemoteWrapper.put(resource, stream);
+    }
+
 }

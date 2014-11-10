@@ -2,7 +2,7 @@
 
 buildscript {
     repositories {
-        maven { url "http://192.168.150.4:8081/nexus/content/repositories/thirdparty/" }
+        maven { url "http://192.168.151.6:8101/nexus/content/repositories/thirdparty/" }
         mavenCentral()
     }
     dependencies {
@@ -12,7 +12,7 @@ buildscript {
 
 allprojects {
     repositories {
-        maven { url "http://192.168.150.4:8081/nexus/content/repositories/thirdparty/" }
+        maven { url "http://192.168.151.6:8101/nexus/content/repositories/thirdparty/" }
         mavenCentral()
     }
 }
