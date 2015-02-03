@@ -76,8 +76,16 @@ public class ResourceCacheWrapper {
         return mCache.put(resource.getUri().toString(), bitmap);
     }
 
+    public void put(final Resource resource, InputStream stream){
+        mCache.putOrigin(resource.getUri().toString(), stream);
+    }
+
     public CacheableBitmapDrawable getFromDiskCache(final Resource res) {
         return mCache.getFromDiskCache(res.getUri().toString(), obtainOptions());
+    }
+
+    public File getFileFromDiskCache(final Resource res){
+        return mCache.getFileFromDiskCache(res.getUri().toString());
     }
 
     public CacheableBitmapDrawable getFromMemoryCache(final Resource res) {

@@ -147,7 +147,6 @@ public class ResourceRemoteWrapper extends Observable {
                     onRequestMapping.remove(img);
                     fileSysHandler.delFile(img.getUri());
                     setChanged();
-                    ResourceRemoteWrapper.this.notifyObservers(img);
                     e.printStackTrace();
                 }
             };

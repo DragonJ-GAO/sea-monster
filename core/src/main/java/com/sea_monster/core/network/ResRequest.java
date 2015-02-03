@@ -68,17 +68,11 @@ public abstract class ResRequest implements ResCallback {
 			@Override
 			public void onFailure(BaseException e) {
 				ResRequest.this.onFailure(this, e);
-				if (storeStatusCallback != null) {
-					storeStatusCallback.onFailure(this, e);
-				}
 			}
 
 			@Override
 			public void onComplete(File obj) {
 				ResRequest.this.onComplete(this, obj);
-				if (storeStatusCallback != null) {
-					storeStatusCallback.onComplete(this, obj);
-				}
 			}
 		};
 

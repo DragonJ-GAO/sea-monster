@@ -8,74 +8,76 @@ import com.sea_monster.core.utils.ParcelUtils;
 
 public class Resource implements Parcelable {
 
-	protected Uri resUri;
-	private int mOrientaion = -1;
+    protected Uri resUri;
+    private int mOrientaion = -1;
 
-	public Resource() {
-	}
-
-
-	public Resource(Uri uri) {
-		this.resUri = uri;
-	}
-
-	public Resource(Parcel in) {
-		this(ParcelUtils.readFromParcel(in, Uri.class));
-	}
-
-	public Resource(Resource resource) {
-		this.resUri = resource.getUri();
-	}
-	
-
-	public Resource(String uriPath) {
-		this(Uri.parse(uriPath));
-	}
+    public Resource() {
+    }
 
 
-	public Uri getUri() {
-		return this.resUri;
-	}
+    public Resource(Uri uri) {
+        this.resUri = uri;
+    }
 
-	@Override
-	public int hashCode() {
-		return this.resUri.hashCode();
-	}
+    public Resource(Parcel in) {
+        this(ParcelUtils.readFromParcel(in, Uri.class));
+    }
 
-	@Override
-	public int describeContents() {
-		return 0;
-	}
+    public Resource(Resource resource) {
+        this.resUri = resource.getUri();
+    }
 
-	public int getOrientaion() {
-		return mOrientaion;
-	}
 
-	public void setOrientaion(int orientaion) {
-		this.mOrientaion = orientaion;
-	}
+    public Resource(String uriPath) {
+        this(Uri.parse(uriPath));
+    }
 
-	@Override
-	public void writeToParcel(Parcel dest, int flags) {
-		ParcelUtils.writeToParcel(dest, resUri);
-	}
 
-	public static final Creator<Resource> CREATOR = new Creator<Resource>() {
-		public Resource createFromParcel(Parcel in) {
-			return new Resource(in);
-		}
+    public Uri getUri() {
+        return this.resUri;
+    }
 
-		@Override
-		public Resource[] newArray(int size) {
-			return new Resource[size];
-		}
-	};
+    @Override
+    public int hashCode() {
+        return this.resUri.hashCode();
+    }
 
-	public boolean equals(Resource o) {
-		if (o == null) {
-			return false;
-		}
-		return o.hashCode() == this.hashCode();
-	};
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public int getOrientaion() {
+        return mOrientaion;
+    }
+
+    public void setOrientaion(int orientaion) {
+        this.mOrientaion = orientaion;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        ParcelUtils.writeToParcel(dest, resUri);
+    }
+
+    public static final Creator<Resource> CREATOR = new Creator<Resource>() {
+        public Resource createFromParcel(Parcel in) {
+            return new Resource(in);
+        }
+
+        @Override
+        public Resource[] newArray(int size) {
+            return new Resource[size];
+        }
+    };
+
+    public boolean equals(Resource o) {
+        if (o == null || (o.getUri() == null && getUri() != null)) {
+            return false;
+        }
+        return o.getUri().equals(this.getUri());
+    }
+
+    ;
 
 }

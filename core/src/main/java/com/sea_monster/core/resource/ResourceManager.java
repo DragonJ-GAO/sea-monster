@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
+import android.util.Log;
 
 import com.sea_monster.core.exception.BaseException;
 import com.sea_monster.core.network.AbstractHttpRequest;
@@ -81,11 +82,13 @@ public class ResourceManager {
         mRemoteWrapper.deleteObserver(observer);
     }
 
+    public BitmapDrawable getDrawableCache(final Resource resource){
+        return mCacheWrapper.getFromMemoryCache(resource);
+    }
 
     public BitmapDrawable getDrawable(final Resource resource) {
         BitmapDrawable drawable = null;
         drawable = mCacheWrapper.get(resource);
-
         if (mCacheWrapper.contains(resource)) {
             drawable = mCacheWrapper.get(resource);
             return drawable;
@@ -99,6 +102,7 @@ public class ResourceManager {
         } else if (resource instanceof RequestResource) {
             if (mRemoteWrapper.exists(resource)) {
                 try {
+                    mCacheWrapper.put(resource, mRemoteWrapper.getBitmap(resource));
                     return new BitmapDrawable(mContext.getResources(), mRemoteWrapper.getBitmap(resource));
                 } catch (BaseException e) {
                     e.printStackTrace();
@@ -132,6 +136,7 @@ public class ResourceManager {
         } else {
             if (mRemoteWrapper.exists(resource)) {
                 try {
+                    mCacheWrapper.put(resource, mRemoteWrapper.getBitmap(resource));
                     return new BitmapDrawable(mContext.getResources(), mRemoteWrapper.getBitmap(resource));
                 } catch (BaseException e) {
                     e.printStackTrace();
@@ -175,8 +180,12 @@ public class ResourceManager {
         mCacheWrapper.put(resource, bitmap);
     }
 
+    public File getCacheFile(Resource resource){
+        return mCacheWrapper.getFileFromDiskCache(resource);
+    }
+
     public void put(Resource resource, InputStream stream) {
-        mRemoteWrapper.put(resource, stream);
+        mCacheWrapper.put(resource, stream);
     }
 
 }

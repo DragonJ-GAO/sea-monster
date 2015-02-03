@@ -49,6 +49,15 @@ public class ParcelUtils {
         }
     }
 
+    public static void writeToParcel(Parcel out, Double obj){
+        if(obj!=null){
+            out.writeInt(Const.Parcel.EXIST_SEPARATOR);
+            out.writeDouble(obj);
+        }else {
+            out.writeInt(Const.Parcel.NON_SEPARATOR);
+        }
+    }
+
 	public static void writeToParcel(Parcel out, Map obj) {
 		if (obj != null) {
 			out.writeInt(Const.Parcel.EXIST_SEPARATOR);
@@ -71,6 +80,15 @@ public class ParcelUtils {
         int flag = in.readInt();
         if (flag == Const.Parcel.EXIST_SEPARATOR) {
             return in.readFloat();
+        } else {
+            return null;
+        }
+    }
+
+    public static Double readDoubleFromParcel(Parcel in) {
+        int flag = in.readInt();
+        if (flag == Const.Parcel.EXIST_SEPARATOR) {
+            return in.readDouble();
         } else {
             return null;
         }
