@@ -1,7 +1,3 @@
-/*
- * 文件名：	AsyncImageView.java
- * 创建日期：	2012-6-20
- */
 package com.sea_monster.widget;
 
 import android.content.Context;
@@ -12,13 +8,8 @@ import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.Log;
 
-import com.sea_monster.core.common.BackgroundThread;
-import com.sea_monster.core.resource.ResourceManager;
-import com.sea_monster.core.resource.model.CompressedResource;
-import com.sea_monster.core.resource.model.Resource;
-
-import java.io.File;
 import java.lang.ref.WeakReference;
+import java.net.URISyntaxException;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.ExecutorService;
@@ -26,22 +17,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 
-import uk.co.senab.bitmapcache.CacheableImageView;
+import com.sea_monster.cache.CacheableImageView;
+import com.sea_monster.common.BackgroundThread;
+import com.sea_monster.resource.Resource;
+import com.sea_monster.resource.ResourceHandler;
 
 /**
- * 版权所有 (c) 2012 北京新媒传信科技有限公司。 保留所有权利。<br>
- * 项目名： 飞信 - Android客户端<br>
- * 描述： <br>
- *
- * @author dragonj
- * @version 1.0
- * @since JDK1.5
+ * Created by DragonJ on 15/2/4.
  */
 public class AsyncImageView extends CacheableImageView implements Observer {
 
     static final ExecutorService mMultiThreadExecutor;
     static final boolean DEBUG = true;
-    static final String TAG = "AsyncImageView";
 
     static {
         int coreNum = Math.round(Runtime.getRuntime().availableProcessors());
@@ -63,29 +50,20 @@ public class AsyncImageView extends CacheableImageView implements Observer {
 
     @Override
     public void update(Observable observable, Object data) {
+        if(mResource == null)
+            return;
 
-        if (mResource instanceof Resource) {
-            Log.d(TAG, "update Resource");
-            Resource resource = (Resource) data;
-            if (data.equals(resource) || data.equals(resource.getOrientaion())) {
-                post(new Runnable() {
-                    @Override
-                    public void run() {
-                        refreshResouce();
-                    }
-                });
-            }
-        } else if (mResource instanceof CompressedResource) {
-            Log.d(TAG, "update CompressedResource");
-            Resource resource = ((CompressedResource) data).getOriResource();
-            if (data.equals(resource) || data.equals(resource.getOrientaion())) {
-                post(new Runnable() {
-                    @Override
-                    public void run() {
-                        refreshResouce();
-                    }
-                });
-            }
+        if (data instanceof ResourceHandler.RequestCallback) {
+            ResourceHandler.RequestCallback callback = (ResourceHandler.RequestCallback) data;
+            if (callback != null && callback.isSuccess())
+                if (mResource.equals(callback.getResource())) {
+                    post(new Runnable() {
+                        @Override
+                        public void run() {
+                            refreshResouce();
+                        }
+                    });
+                }
         }
 
     }
@@ -121,7 +99,7 @@ public class AsyncImageView extends CacheableImageView implements Observer {
     final static int STATUS_DISPLAY = 1;
     final static int STATUS_EMPTY = 0;
     boolean isAttached;
-
+    private boolean isCircle;
     private int status;
 
     public AsyncImageView(Context context) {
@@ -130,9 +108,13 @@ public class AsyncImageView extends CacheableImageView implements Observer {
 
     public AsyncImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.AsyncImageView);
 
+
+        TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.AsyncImageView);
         int resId = a.getResourceId(R.styleable.AsyncImageView_defDrawable, 0);
+        int shape = a.getInt(R.styleable.AsyncImageView_shape, 0);
+
+        isCircle = shape == 1;
 
         if (resId != 0)
             mDefaultDrawable = getResources().getDrawable(resId);
@@ -140,52 +122,83 @@ public class AsyncImageView extends CacheableImageView implements Observer {
         a.recycle();
     }
 
-
     public Resource getResource() {
         return mResource;
     }
 
     public void setDefaultDrawable(Drawable defaultDrawable) {
-        this.mDefaultDrawable = defaultDrawable;
+        if (defaultDrawable == null) {
+            this.mDefaultDrawable = null;
+            return;
+        }
+
+        if (isCircle && defaultDrawable instanceof BitmapDrawable) {
+            this.mDefaultDrawable = new CircleBitmapDrawable(getResources(), ((BitmapDrawable) defaultDrawable).getBitmap());
+        } else {
+            this.mDefaultDrawable = defaultDrawable;
+        }
+    }
+
+
+    public void setImageDrawable(Drawable drawable) {
+
+        if (isCircle && drawable instanceof BitmapDrawable) {
+            super.setImageDrawable(new CircleBitmapDrawable(getResources(), ((BitmapDrawable) drawable).getBitmap()));
+        } else {
+            super.setImageDrawable(drawable);
+        }
+
+    }
+
+
+    public void clean() {
+        this.mResource = null;
+        status = STATUS_EMPTY;
+        setImageDrawable(mDefaultDrawable);
     }
 
     public void setResource(Resource resource) {
+
         final Resource previous = getResource();
         this.mResource = resource;
 
         if (mResource == null) {
             status = STATUS_EMPTY;
             setImageDrawable(mDefaultDrawable);
-            Log.d(TAG, "setDefaultDrawable");
             return;
         }
 
         if (!mResource.equals(previous)) {
+            setImageDrawable(mDefaultDrawable);
             status = STATUS_EMPTY;
         }
 
         if (status == STATUS_EMPTY) {
             mAttachedRunnable = null;
             cancelRequest();
-            setImageDrawable(mDefaultDrawable);
-            if (ResourceManager.getInstance().containsInMemoryCache(mResource)) {
-                Log.d(TAG, "containsInMemoryCache");
-                final BitmapDrawable drawable = ResourceManager.getInstance().getDrawable(mResource);
-                if (drawable != null) {
-                    setImageDrawable(drawable);
+            if (mResource != null && mResource.getUri() != null && ResourceHandler.getInstance().containsInMemoryCache(mResource)) {
+                final BitmapDrawable drawable = ResourceHandler.getInstance().getDrawable(mResource);
+                if (drawable != null && drawable.getBitmap() != null) {
+                    if (isCircle) {
+                        setImageDrawable(new CircleBitmapDrawable(getResources(), drawable.getBitmap()));
+                    } else {
+                        setImageDrawable(drawable);
+                        invalidate();
+                    }
                     status = STATUS_DISPLAY;
+
                 } else {
                     setImageDrawable(mDefaultDrawable);
                 }
             } else {
-                mCurrentRunnable = mMultiThreadExecutor.submit(new PhotoLoadRunnable(this, ResourceManager.getInstance(), mResource));
+                mCurrentRunnable = mMultiThreadExecutor.submit(new PhotoLoadRunnable(this, ResourceHandler.getInstance(), mResource));
             }
         }
     }
 
     @Override
     protected void onDetachedFromWindow() {
-        ResourceManager.getInstance().deleteObserver(this);
+        ResourceHandler.getInstance().deleteObserver(this);
         cancelRequest();
         super.onDetachedFromWindow();
         isAttached = false;
@@ -198,7 +211,7 @@ public class AsyncImageView extends CacheableImageView implements Observer {
     }
 
     protected void onAttachedToWindow() {
-        ResourceManager.getInstance().addObserver(this);
+        ResourceHandler.getInstance().addObserver(this);
         super.onAttachedToWindow();
         isAttached = true;
         if (mAttachedRunnable != null) {
@@ -206,7 +219,6 @@ public class AsyncImageView extends CacheableImageView implements Observer {
             mAttachedRunnable = null;
         }
     }
-
 
     public void cancelRequest() {
         if (null != mCurrentRunnable) {
@@ -222,72 +234,88 @@ public class AsyncImageView extends CacheableImageView implements Observer {
     static final class PhotoLoadRunnable extends BackgroundThread {
 
         private final WeakReference<AsyncImageView> mImageView;
-        private final ResourceManager mManager;
+        private final ResourceHandler mHandler;
         private final Resource mResource;
 
-        public PhotoLoadRunnable(AsyncImageView imageView, ResourceManager manager,
-                                 Resource resource) {
+        public PhotoLoadRunnable(AsyncImageView imageView, ResourceHandler handler, final Resource resource) {
             mImageView = new WeakReference<AsyncImageView>(imageView);
-            mManager = manager;
+            mHandler = handler;
             mResource = resource;
         }
 
         public void runImpl() {
+
             final AsyncImageView imageView = mImageView.get();
+
             if (null == imageView) {
                 return;
             }
-            Log.d(TAG, "runImpl");
+            BitmapDrawable diskDrawable = null;
+            synchronized (mResource) {
+                diskDrawable = mHandler.getDrawable(mResource);
+            }
+            if (diskDrawable != null && diskDrawable.getBitmap() != null) {
 
 
-            File file = mManager.getFile(mResource);
-
-            final BitmapDrawable diskDrawable = mManager.getDrawable(mResource);
-
-            if (file.exists())
-                Log.d(TAG, "BitmapDrawable");
-            if (null != diskDrawable) {
-                mManager.put(mResource, diskDrawable.getBitmap());
-                Log.d(TAG, "BitmapDrawable not null");
-                if (imageView.status == STATUS_EMPTY && imageView.getResource().equals(mResource)) {
-
+                if (imageView.status == STATUS_EMPTY && imageView.getResource().equals(mResource)&&imageView.isAttached) {
+                    final BitmapDrawable drawable = diskDrawable;
                     imageView.post(new Runnable() {
                         public void run() {
-                            Log.d(TAG, "post setBitmapDrawable");
-                            imageView.setImageDrawable(diskDrawable);
+                            if (imageView.getResource() == null || !imageView.getResource().equals(mResource))
+                                return;
+
+                            if (imageView.isCircle)
+                                imageView.setImageDrawable(new CircleBitmapDrawable(imageView.getResources(), drawable.getBitmap()));
+                            else
+                                imageView.setImageDrawable(drawable);
+
                             imageView.status = STATUS_DISPLAY;
                         }
                     });
                 } else {
+                    final BitmapDrawable drawable = diskDrawable;
                     imageView.mAttachedRunnable = new Runnable() {
                         public void run() {
-                            Log.d(TAG, "mAttachedRunnable setBitmapDrawable");
-                            imageView.setImageDrawable(diskDrawable);
+
+                            if (imageView.getResource() == null || !imageView.getResource().equals(mResource))
+                                return;
+
+                            if (imageView.isCircle)
+                                imageView.setImageDrawable(new CircleBitmapDrawable(imageView.getResources(), drawable.getBitmap()));
+                            else
+                                imageView.setImageDrawable(drawable);
+
                             imageView.status = STATUS_DISPLAY;
                         }
                     };
                 }
             } else {
-                Log.d(TAG, "BitmapDrawable null");
                 if (imageView.isAttached) {
                     imageView.post(new Runnable() {
                         @Override
                         public void run() {
-                            Log.d(TAG, "post setBitmapDefault");
-
                             imageView.setImageDrawable(imageView.mDefaultDrawable);
                         }
                     });
                 } else {
                     imageView.mAttachedRunnable = new Runnable() {
                         public void run() {
-                            Log.d(TAG, "mAttachedRunnable setBitmapDefault");
                             imageView.setImageDrawable(imageView.mDefaultDrawable);
                         }
                     };
                 }
+
+                if (mResource.getUri().getScheme().equals("http") || mResource.getUri().getScheme().equals("https")) {
+                    try {
+                        mHandler.requestResource(mResource);
+                    } catch (URISyntaxException e) {
+                        e.printStackTrace();
+                    }
+                }
+
             }
         }
     }
+
 
 }

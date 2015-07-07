@@ -3,6 +3,7 @@ apply plugin: 'maven'
 
 version '0.1.0'
 group 'com.sea_monster'
+
 android {
     compileSdkVersion 21
     buildToolsVersion "21.1.2"
@@ -23,9 +24,8 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile project(':resource')
+    compile 'com.android.support:support-v4:21.0.3'
 }
-
 
 android.libraryVariants.all { variant ->
     def name = variant.buildType.name
