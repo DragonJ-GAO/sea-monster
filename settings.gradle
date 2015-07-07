@@ -1,1 +1,1 @@
-include ':core', ':widget'
+include ':core', ':widget', ':test'

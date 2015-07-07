@@ -14,6 +14,8 @@ import com.sea_monster.core.exception.BaseException;
 import com.sea_monster.core.resource.io.IFileSysHandler;
 import com.sea_monster.core.resource.model.LocalResource;
 
+import java.io.IOException;
+
 /**
  * Created by DragonJ on 13-7-3.
  */
@@ -265,8 +267,14 @@ public class ResourceCompressHandler implements IResourceCompressHandler {
 
 			} catch (Exception e) {
 				request.onFailure(new BaseException(e));
-			}
-		}
+			}finally {
+                try {
+                    request.getStream().close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 		request.onComplete(result);
 
 		return result;
@@ -314,7 +322,13 @@ public class ResourceCompressHandler implements IResourceCompressHandler {
 			e.printStackTrace();
 			options.inSampleSize = options.inSampleSize << 1;
 			bitmap = BitmapFactory.decodeStream(request.getStream(), null, options);
-		}
+		}finally {
+            try {
+                request.getStream().close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
 		Matrix matrix = new Matrix();
 		if (bitmap == null) {

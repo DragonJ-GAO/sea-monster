@@ -35,8 +35,6 @@ dependencies {
     compile 'com.android.support:support-v4:+'
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':core')
-    compile 'com.github.chrisbanes.bitmapcache:library:2.3@jar'
-    compile 'com.jakewharton:disklrucache:2.0.2@jar'
 }
 
 

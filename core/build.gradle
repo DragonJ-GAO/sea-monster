@@ -1,7 +1,7 @@
 apply plugin: 'android-library'
 apply plugin: 'maven'
 
-version '0.0.41'
+version '0.0.43'
 group 'com.sea_monster'
 
 android {
@@ -24,7 +24,6 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.android.support:support-v4:+'
 }
 
 uploadArchives {

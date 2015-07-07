@@ -16,7 +16,9 @@
 package uk.co.senab.bitmapcache;
 
 import android.graphics.Bitmap;
-import android.support.v4.util.LruCache;
+
+
+import com.sea_monster.core.common.LruCache;
 
 import java.lang.ref.SoftReference;
 import java.util.Collections;
