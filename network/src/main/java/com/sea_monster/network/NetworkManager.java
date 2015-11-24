@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.sea_monster.exception.BaseException;
+import com.sea_monster.network.apache.ApacheHttpHandler;
 
 /**
  * Created by DragonJ on 15/2/2.
@@ -18,7 +19,7 @@ public class NetworkManager{
     static NetworkManager sS;
     HttpHandler mHandler;
 
-    private NetworkManager(Context context) {
+    private NetworkManager(Context context, HttpHandler handler) {
 
 
         BlockingQueue<Runnable> mWorkQueue = new PriorityBlockingQueue<Runnable>(Const.WORK_QUEUE_MAX_COUNT);
@@ -36,11 +37,14 @@ public class NetworkManager{
 
         executor.setRejectedExecutionHandler(new DiscardOldestPolicy());
 
-        mHandler = new DefaultHttpHandler(context, executor);
+        if(handler == null)
+            handler = new ApacheHttpHandler(context, executor);
+
+        mHandler = handler;
     }
 
     public static void init(Context context){
-        sS = new NetworkManager(context);
+        sS = new NetworkManager(context, null);
     }
 
     public static NetworkManager getInstance()
@@ -50,10 +54,6 @@ public class NetworkManager{
 
     public <T> void requestAsync(AbstractHttpRequest<T> request){
         mHandler.executeRequest(request);
-    }
-
-    public <T> T requestSync(AbstractHttpRequest<T> request) throws BaseException{
-        return mHandler.executeRequestSync(request);
     }
 
     public void cancelRequest(AbstractHttpRequest<?> request){

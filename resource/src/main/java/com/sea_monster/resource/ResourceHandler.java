@@ -13,15 +13,22 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.sea_monster.cache.BaseCache;
 import com.sea_monster.cache.BitmapCacheWrapper;
 import com.sea_monster.cache.CacheableBitmapDrawable;
 import com.sea_monster.cache.DiskCacheWrapper;
+import com.sea_monster.common.RequestProcess;
 import com.sea_monster.exception.BaseException;
-import com.sea_monster.network.AbstractHttpRequest;
-import com.sea_monster.network.NetworkManager;
-import com.sea_monster.network.StoreStatusCallback;
+import com.sea_monster.network.*;
+import com.sea_monster.network.apache.ApacheHttpHandler;
+import com.sea_monster.network.ok.OkHttpHandler;
 
 
 /**
@@ -31,7 +38,7 @@ public class ResourceHandler extends Observable {
 
     static ResourceHandler sS;
 
-    NetworkManager mNetworkManager;
+    HttpHandler mHandler;
     DiskCacheWrapper mDiskCache;
     BitmapCacheWrapper mBitmapCache;
     BaseCache mBaseCache;
@@ -45,7 +52,6 @@ public class ResourceHandler extends Observable {
     }
 
     private ResourceHandler(Context context, String type) {
-        NetworkManager.init(context);
         mContext = context;
         if (type == null)
             mBaseCache = new BaseCache.Builder().build(context);
@@ -55,20 +61,20 @@ public class ResourceHandler extends Observable {
         mRequestQueue = new HashMap<>();
     }
 
-    private ResourceHandler(Context context, NetworkManager networkManager) {
+    private ResourceHandler(Context context, HttpHandler handler) {
         init(context);
-        mNetworkManager = networkManager;
-
-        if(mNetworkManager == null)
-            mNetworkManager.init(context);
+        mHandler = handler;
     }
 
     public final static class Builder {
 
+        public final static int HTTP_APACHE = 0;
+        public final static int HTTP_OKHTTP = 0;
+
         private BaseCache cache;
 
         private boolean enableBitmapCache;
-
+        private int httpType;
         private int sizeLimit;
 
         private String type;
@@ -82,7 +88,12 @@ public class ResourceHandler extends Observable {
 
         }
 
-        public Builder setOutputSizeLimit(int size){
+        public Builder setHttpType(int type) {
+            this.httpType = type;
+            return this;
+        }
+
+        public Builder setOutputSizeLimit(int size) {
             sizeLimit = size;
             return this;
         }
@@ -96,12 +107,33 @@ public class ResourceHandler extends Observable {
             if (enableBitmapCache) {
                 cache.enableBitmapCache();
 
-                if(sizeLimit>0)
+                if (sizeLimit > 0)
                     cache.mBitmapCache.setSizeLimit(sizeLimit);
             }
 
-            cache.init(context);
+            if (httpType == 0) {
 
+                BlockingQueue<Runnable> queue = new PriorityBlockingQueue<Runnable>(Const.WORK_QUEUE_MAX_COUNT);
+
+                ThreadFactory mThreadFactory = new ThreadFactory() {
+                    private final AtomicInteger mCount = new AtomicInteger(1);
+
+                    public Thread newThread(Runnable r) {
+                        return new Thread(r, "ConnectTask #" + mCount.getAndIncrement());
+                    }
+                };
+
+                ThreadPoolExecutor executor = new ThreadPoolExecutor(Const.DEF_THREAD_WORDER_COUNT, Const.MAX_THREAD_WORKER_COUNT, Const.CREATE_THREAD_TIME_SPAN,
+                        TimeUnit.SECONDS, queue, mThreadFactory);
+
+                executor.setRejectedExecutionHandler(new com.sea_monster.network.DiscardOldestPolicy());
+
+                cache.mHandler = new ApacheHttpHandler(context, executor);
+            } else {
+                cache.mHandler = new OkHttpHandler(context);
+            }
+
+            cache.init(context);
 
 
             sS = cache;
@@ -125,7 +157,6 @@ public class ResourceHandler extends Observable {
             mHandlerMap.put("image", new CachedImageResourceHandler(context, mBitmapCache));
         }
 
-        mNetworkManager = NetworkManager.getInstance();
     }
 
     private void enableBitmapCache() {
@@ -140,7 +171,7 @@ public class ResourceHandler extends Observable {
 
         ResRequest resRequest = new ResRequest(this, resource) {
             @Override
-            public void onComplete(AbstractHttpRequest<File> request, File obj) {
+            public void onComplete(RequestProcess<File> request, File obj) {
                 if (callback != null)
                     callback.onComplete(request, obj);
                 setChanged();
@@ -152,7 +183,7 @@ public class ResourceHandler extends Observable {
             }
 
             @Override
-            public void onFailure(AbstractHttpRequest<File> request, BaseException e) {
+            public void onFailure(RequestProcess<File> request, BaseException e) {
                 if (callback != null)
                     callback.onFailure(request, e);
                 setChanged();
@@ -164,7 +195,7 @@ public class ResourceHandler extends Observable {
         AbstractHttpRequest<File> request = resRequest.obtainRequest();
 
         mRequestQueue.put(resource, request);
-        mNetworkManager.requestAsync(request);
+        mHandler.executeRequest(request);
         return request;
     }
 
@@ -175,7 +206,7 @@ public class ResourceHandler extends Observable {
 
         ResRequest resRequest = new ResRequest(this, resource, statusCallback) {
             @Override
-            public void onComplete(AbstractHttpRequest<File> request, File obj) {
+            public void onComplete(RequestProcess<File> request, File obj) {
                 if (callback != null)
                     callback.onComplete(request, obj);
                 setChanged();
@@ -185,7 +216,7 @@ public class ResourceHandler extends Observable {
             }
 
             @Override
-            public void onFailure(AbstractHttpRequest<File> request, BaseException e) {
+            public void onFailure(RequestProcess<File> request, BaseException e) {
                 if (callback != null)
                     callback.onFailure(request, e);
                 setChanged();
@@ -197,14 +228,14 @@ public class ResourceHandler extends Observable {
         AbstractHttpRequest<File> request = resRequest.obtainRequest();
 
         mRequestQueue.put(resource, request);
-        mNetworkManager.requestAsync(request);
+        mHandler.executeRequest(request);
         return request;
     }
 
     public void cancel(Resource resource) {
 
         if (mRequestQueue.containsKey(resource)) {
-            mNetworkManager.cancelRequest(mRequestQueue.get(resource));
+            mHandler.cancelRequest(mRequestQueue.get(resource));
         }
     }
 
@@ -254,19 +285,14 @@ public class ResourceHandler extends Observable {
         return mBitmapCache.get(resource.getUri());
     }
 
-    IResourceHandler getResourceHandler(HttpEntity entity) {
-        if (entity.getContentType() == null) {
-            return mHandlerMap.get("*");
-        }
+    IResourceHandler getResourceHandler(String contentType) {
 
-        String type = entity.getContentType().getValue();
-
-        if (TextUtils.isEmpty(type)) {
+        if (TextUtils.isEmpty(contentType)) {
             return mHandlerMap.get("*");
         }
 
         for (Map.Entry<String, IResourceHandler> entry : mHandlerMap.entrySet()) {
-            if (type.startsWith(entry.getKey()))
+            if (contentType.startsWith(entry.getKey()))
                 return entry.getValue();
         }
 

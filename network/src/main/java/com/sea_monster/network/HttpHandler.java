@@ -1,13 +1,27 @@
 package com.sea_monster.network;
 
-import com.sea_monster.exception.BaseException;
+import com.sea_monster.common.PriorityRunnable;
 
-public interface HttpHandler {
-	public <T> int executeRequest(AbstractHttpRequest<T> request);
 
-	public <T> T executeRequestSync(AbstractHttpRequest<T> request) throws BaseException;
+public abstract interface HttpHandler {
+    public <T> int executeRequest(AbstractHttpRequest<T> request);
 
-	public void cancelRequest(AbstractHttpRequest<?> request);
+    public void cancelRequest(AbstractHttpRequest<?> request);
 
-	public void cancelRequest();
+    public void cancelRequest();
+
+
+    public abstract class PriorityRequestRunnable<T> extends PriorityRunnable {
+        protected AbstractHttpRequest<T> request;
+
+
+        public PriorityRequestRunnable(AbstractHttpRequest<T> request) {
+            super(request.getPriority());
+            this.request = request;
+        }
+
+        public AbstractHttpRequest<T> getRequest() {
+            return request;
+        }
+    }
 }

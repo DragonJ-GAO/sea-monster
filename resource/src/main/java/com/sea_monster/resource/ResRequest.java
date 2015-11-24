@@ -1,7 +1,7 @@
 package com.sea_monster.resource;
 
 
-import org.apache.http.HttpRequest;
+import android.net.Uri;
 
 import java.io.File;
 import java.net.URI;
@@ -9,6 +9,7 @@ import java.net.URISyntaxException;
 
 import com.sea_monster.exception.BaseException;
 import com.sea_monster.network.AbstractHttpRequest;
+import com.sea_monster.network.HttpRequest;
 import com.sea_monster.network.StoreStatusCallback;
 
 public abstract class ResRequest implements ResCallback {
@@ -39,12 +40,13 @@ public abstract class ResRequest implements ResCallback {
 
     public AbstractHttpRequest<File> obtainRequest() {
 
-        final AbstractHttpRequest<File> request = new AbstractHttpRequest<File>(AbstractHttpRequest.GET_METHOD, URI.create(res.getUri().toString()), null) {
+        final AbstractHttpRequest<File> request = new AbstractHttpRequest<File>(AbstractHttpRequest.GET_METHOD, Uri.parse(res.getUri().toString()), null) {
 
             @Override
             public void processReadyRequest(HttpRequest request) {
 
             }
+
 
             @Override
             public void onFailure(BaseException e) {

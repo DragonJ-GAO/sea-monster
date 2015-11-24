@@ -1,34 +1,42 @@
 package com.sea_monster.resource;
 
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
+import com.sea_monster.exception.InternalException;
+import com.sea_monster.exception.ParseException;
+import com.sea_monster.network.NameValuePair;
+import com.sea_monster.network.StatusCallback;
+import com.sea_monster.network.StoreStatusCallback;
+import com.sea_monster.network.parser.IEntityParser;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
-import com.sea_monster.exception.InternalException;
-import com.sea_monster.exception.ParseException;
-import com.sea_monster.network.StatusCallback;
-import com.sea_monster.network.StoreStatusCallback;
-import com.sea_monster.network.parser.IEntityParser;
-
 public class ResParser implements IEntityParser<File> {
 
     private Resource res;
     private ResourceHandler handler;
+    private String contentType;
+    private long contentLength;
 
     @Override
-    public void onHeaderParsed(Header[] headers) {
+    public void onHeaderParsed(NameValuePair[] headers) {
+        if (headers == null)
+            return;
 
+        for (NameValuePair item : headers) {
+            if (item.getName().equals("Content-Type"))
+                contentType = item.getValue();
+            else if (item.getName().equals("Content-Length"))
+                contentLength = Long.parseLong(item.getValue());
+        }
     }
 
     @Override
-    public File parse(HttpEntity entity) throws IOException, ParseException {
+    public File parse(InputStream inputStream) throws IOException, ParseException {
 
-        return parseEntityStream(handler.getResourceHandler(entity), entity.getContent());
+        return parseEntityStream(handler.getResourceHandler(contentType), inputStream);
     }
 
     public ResParser(ResourceHandler handler, Resource res) {
@@ -50,29 +58,29 @@ public class ResParser implements IEntityParser<File> {
 
 
     @Override
-    public File parse(HttpEntity entity, StatusCallback<?> callback) throws IOException, ParseException {
+    public File parse(InputStream inputStream, StatusCallback<?> callback) throws IOException, ParseException {
         File file;
-        if (callback instanceof StoreStatusCallback)
-            file = parseEntityStream(handler.getResourceHandler(entity), entity.getContent(), entity.getContentLength(), (StoreStatusCallback) callback);
+        if (callback instanceof StoreStatusCallback && contentLength > 0)
+            file = parseEntityStream(handler.getResourceHandler(contentType), inputStream, contentLength, (StoreStatusCallback) callback);
         else
-            file = parseEntityStream(handler.getResourceHandler(entity), entity.getContent());
-        entity.consumeContent();
+            file = parseEntityStream(handler.getResourceHandler(contentType), inputStream);
+        inputStream.close();
         return file;
     }
 
     @Override
-    public File parseGzip(HttpEntity entity) throws IOException, ParseException, InternalException {
-        return parseEntityStream(handler.getResourceHandler(entity), new GZIPInputStream(entity.getContent()));
+    public File parseGzip(InputStream inputStream) throws IOException, ParseException, InternalException {
+        return parseEntityStream(handler.getResourceHandler(contentType), new GZIPInputStream(inputStream));
     }
 
     @Override
-    public File parseGzip(HttpEntity entity, StatusCallback<?> callback) throws IOException, ParseException, InternalException {
+    public File parseGzip(InputStream inputStream, StatusCallback<?> callback) throws IOException, ParseException, InternalException {
         File file;
-        if (callback instanceof StoreStatusCallback)
-            file = parseEntityStream(handler.getResourceHandler(entity), new GZIPInputStream(entity.getContent()), entity.getContentLength(), (StoreStatusCallback) callback);
+        if (callback instanceof StoreStatusCallback && contentLength > 0)
+            file = parseEntityStream(handler.getResourceHandler(contentType), new GZIPInputStream(inputStream), contentLength, (StoreStatusCallback) callback);
         else
-            file = parseEntityStream(handler.getResourceHandler(entity), new GZIPInputStream(entity.getContent()));
-        entity.consumeContent();
+            file = parseEntityStream(handler.getResourceHandler(contentType), new GZIPInputStream(inputStream));
+        inputStream.close();
         return file;
     }
 

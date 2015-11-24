@@ -1,21 +1,18 @@
 package com.sea_monster.network;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.Log;
 
+import com.sea_monster.common.RequestProcess;
+import com.sea_monster.exception.BaseException;
 
-import org.apache.http.NameValuePair;
-
-import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.sea_monster.exception.BaseException;
 
 
 public class BaseApi {
@@ -42,7 +39,7 @@ public class BaseApi {
         }
     }
 
-    protected final <T extends ApiCallback> void releaseRequest(WeakReference<T> callback, AbstractHttpRequest request) {
+    protected final <T extends ApiCallback> void releaseRequest(WeakReference<T> callback, RequestProcess request) {
         synchronized (callMap) {
             if (callback == null)
                 Log.d("Api", "Null");
@@ -82,59 +79,34 @@ public class BaseApi {
         }
     }
 
-    protected class DefaultApiReqeust<T extends Serializable> extends ApiReqeust<T> {
+    protected class DefaultApiReqeust<T extends Serializable> extends ApiRequest<T> {
         private WeakReference<ApiCallback<T>> weakCallback;
 
-        public DefaultApiReqeust(int method, URI uri, ApiCallback<T> callback) {
-            super(method, uri);
+        public DefaultApiReqeust(String method, Uri uri, ApiCallback<T> callback) {
+            super(method, uri, null);
             this.weakCallback = new WeakReference<ApiCallback<T>>(callback);
         }
 
 
-        public DefaultApiReqeust(int method, URI uri, List<NameValuePair> params, ApiCallback<T> callback) {
+        public DefaultApiReqeust(String method, Uri uri, List<ParamPair> params, ApiCallback<T> callback) {
             super(method, uri, params);
             this.weakCallback = new WeakReference<ApiCallback<T>>(callback);
         }
 
-        public DefaultApiReqeust(int method, URI uri, List<NameValuePair> params, InputStream stream,
-                                 ApiCallback<T> callback) {
-            super(method, uri, params, stream);
-            this.weakCallback = new WeakReference<ApiCallback<T>>(callback);
-        }
-
-        public DefaultApiReqeust(int method, URI uri, InputStream stream, ApiCallback<T> callback) {
-            super(method, uri, stream);
-            this.weakCallback = new WeakReference<ApiCallback<T>>(callback);
-        }
-
-        public DefaultApiReqeust(int method, URI uri, List<NameValuePair> params, InputStream stream, String resName,
-                                 ApiCallback<T> callback) {
-            super(method, uri, params, stream, resName);
-            this.weakCallback = new WeakReference<ApiCallback<T>>(callback);
-        }
-        public DefaultApiReqeust(int method, URI uri, List<NameValuePair> params, InputStream stream, String name,String fileName,
-                                 ApiCallback<T> callback) {
-            super(method, uri, params, stream, name,fileName);
-            this.weakCallback = new WeakReference<ApiCallback<T>>(callback);
-        }
-
-        public DefaultApiReqeust(int method, URI uri, InputStream stream, String resName, ApiCallback<T> callback) {
-            super(method, uri, stream, resName);
-            this.weakCallback = new WeakReference<ApiCallback<T>>(callback);
-        }
 
         @Override
-        public void onComplete(AbstractHttpRequest<T> request, T obj) {
+        public void onComplete(RequestProcess<T> request, T obj) {
             releaseRequest(weakCallback, request);
             if (weakCallback.get() != null && !weakCallback.enqueue())
                 weakCallback.get().onComplete(request, obj);
         }
 
         @Override
-        public void onFailure(AbstractHttpRequest<T> request, BaseException e) {
+        public void onFailure(RequestProcess<T> request, BaseException e) {
             releaseRequest(weakCallback, request);
             if (weakCallback.get() != null && !weakCallback.enqueue())
                 weakCallback.get().onFailure(request,  e);
         }
+
     }
 }

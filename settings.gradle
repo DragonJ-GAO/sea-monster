@@ -1,1 +1,1 @@
-include ':core', ':widget', ':test'
+include ':cache', ':widget', ':common', ':network', ':resource', ':test', ':network_okhttp'

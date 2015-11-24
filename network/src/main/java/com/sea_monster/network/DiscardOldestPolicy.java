@@ -8,6 +8,7 @@ import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.sea_monster.exception.InternalException;
+import com.sea_monster.network.apache.ApacheHttpHandler;
 
 public class DiscardOldestPolicy implements RejectedExecutionHandler {
 
@@ -30,8 +31,8 @@ public class DiscardOldestPolicy implements RejectedExecutionHandler {
 				runnable = e.getQueue().poll();
 			}
 
-			if (runnable != null && runnable instanceof DefaultHttpHandler.PriorityRequestRunnable) {
-				((DefaultHttpHandler.PriorityRequestRunnable<?>) runnable).getRequest().cancelRequest(
+			if (runnable != null && runnable instanceof ApacheHttpHandler.PriorityRequestRunnable) {
+				((ApacheHttpHandler.PriorityRequestRunnable<?>) runnable).getRequest().onFailure(
 						new InternalException("rejectedExecution:oldest request Discard"));
 			}
 

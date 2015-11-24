@@ -1,12 +1,9 @@
 package com.sea_monster.network.packer;
 
 
-import org.apache.http.HttpEntity;
-import org.json.JSONException;
+import com.sea_monster.exception.PackException;
 
-import java.io.IOException;
-
-import com.sea_monster.exception.InternalException;
+import java.io.InputStream;
 
 public abstract class AbsEntityPacker<T> {
     protected T obj;
@@ -23,6 +20,8 @@ public abstract class AbsEntityPacker<T> {
         return obj;
     }
 
-    public abstract HttpEntity pack() throws IOException, InternalException, JSONException;
+    public abstract InputStream getContent() throws PackException;
+
+    public abstract long getLength();
 
 }

@@ -1,287 +1,411 @@
 package com.sea_monster.network;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpRequest;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.protocol.HTTP;
-import org.json.JSONException;
+import android.net.Uri;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-import com.sea_monster.exception.BaseException;
-import com.sea_monster.exception.InternalException;
-import com.sea_monster.exception.PackException;
-import com.sea_monster.network.entity.GzipEntity;
-import com.sea_monster.network.entity.MultipartEntity;
+import com.sea_monster.common.PriorityRunnable;
 import com.sea_monster.network.packer.AbsEntityPacker;
 import com.sea_monster.network.parser.IEntityParser;
 
-public abstract class AbstractHttpRequest<T> implements HttpRequestProcess<T> {
-	public static final int NORMAL = 0;
-	public static final int LOW = -1;
-	public static final int HIGH = 1;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
 
-	private int callId;
-	private int priority;
-	private URI uri;
-	private List<NameValuePair> params;
-	private InputStream resStream;
-	private boolean isMultiPart;
-	private String resName;
-	private String fileName;
-	private int method;
-	private IEntityParser<?> parser;
-	private AbsEntityPacker<?> packer;
-	private boolean supportGzip = false;;
+public abstract class AbstractHttpRequest<T> implements HttpRequest, HttpRequestProcess<T> {
 
-	private Map<String, Object> attrs;
+    private String method;
+    private int callId;
+    private Uri uri;
+    private List<NameValuePair> headers;
+    private List<ParamPair> params;
+    private int priority;
+    private IEntityParser<?> parser;
+    private AbsEntityPacker<?> packer;
 
-	private StatusCallback<?> statusCallback;
+    private StatusCallback<?> statusCallback;
 
-	public StatusCallback<?> getStatusCallback() {
-		return statusCallback;
-	}
+    public StatusCallback<?> getStatusCallback() {
+        return statusCallback;
+    }
 
-	public void setStatusCallback(StatusCallback<?> statusCallback) {
-		this.statusCallback = statusCallback;
-	}
+    public void setStatusCallback(StatusCallback<?> statusCallback) {
+        this.statusCallback = statusCallback;
+    }
 
-	public boolean isSupportGzip() {
-		return supportGzip;
-	}
 
-	public void setSupportGzip(boolean supportGzip) {
-		this.supportGzip = supportGzip;
-	}
+    public AbstractHttpRequest(String method, Uri uri, List<NameValuePair> headers, List<ParamPair> params, AbsEntityPacker packer, IEntityParser parser, int priority) {
+        this.callId = new Random().nextInt();
+        this.method = method;
+        this.uri = uri;
+        this.headers = headers;
+        this.params = params;
+        this.packer = packer;
+        this.parser = parser;
+        this.priority = priority;
 
-	public final static int GET_METHOD = 1;
-	public final static int POST_METHOD = 2;
-	public final static int PUT_METHOD = 3;
+    }
 
-	public AbstractHttpRequest(int method, URI uri, List<NameValuePair> params, int priority, boolean isMultiPart) {
-		this.method = method;
-		this.uri = uri;
-		this.params = params;
-		this.callId = new Random().nextInt();
-		this.priority = priority;
-		this.isMultiPart = isMultiPart;
-	}
+    public AbstractHttpRequest(String method, Uri uri, List<ParamPair> params, IEntityParser<?> parser) {
+        this(method, uri, null, params, null, parser, PriorityRunnable.NORMAL);
 
-	public AbstractHttpRequest(int method, URI uri, List<NameValuePair> params, IEntityParser<?> parser) {
-		this.method = method;
-		this.uri = uri;
-		this.params = params;
-		this.parser = parser;
-		this.callId = new Random().nextInt();
-		this.priority = NORMAL;
-		isMultiPart = false;
+    }
 
-	}
+    public AbstractHttpRequest(String method, Uri uri, List<ParamPair> params) {
+        this(method, uri, null, params, null, null, PriorityRunnable.NORMAL);
+    }
 
-	public AbstractHttpRequest(int method, URI uri, List<NameValuePair> params) {
-		this.method = method;
-		this.uri = uri;
-		this.params = params;
-		this.callId = new Random().nextInt();
-		this.priority = NORMAL;
-		isMultiPart = false;
-	}
+    public AbstractHttpRequest(String method, Uri uri, List<ParamPair> params, IEntityParser<?> parser, int priority) {
+        this(method, uri, null, params, null, parser, priority);
+    }
 
-	public AbstractHttpRequest(int method, URI uri, List<NameValuePair> params, IEntityParser<?> parser, int priority) {
-		this.method = method;
-		this.uri = uri;
-		this.params = params;
-		this.parser = parser;
-		this.callId = new Random().nextInt();
-		this.priority = priority;
-		isMultiPart = false;
-	}
+    public AbstractHttpRequest(String method, Uri uri, List<ParamPair> params, int priority) {
+        this(method, uri, null, params, null, null, priority);
+    }
 
-	public AbstractHttpRequest(int method, URI uri, List<NameValuePair> params, int priority) {
-		this.method = method;
-		this.uri = uri;
-		this.params = params;
-		this.callId = new Random().nextInt();
-		this.priority = priority;
-		isMultiPart = false;
-	}
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(String.format("CallId:%1$d\n", callId));
+        stringBuilder.append(String.format("URI:%1$s\n", uri.toString()));
 
-	public void cancelRequest(BaseException e) {
-		this.onFailure(e);
-	}
+        int i = 0;
 
-	public int getMethod() {
-		return method;
-	}
+        if (headers != null && headers.size() > 0) {
+            stringBuilder.append('\n');
+            for (NameValuePair item : headers)
+                stringBuilder.append(String.format("Header($1$d):%2$s\n", item.getName(), item.getValue()));
+        }
+        if (params != null && params.size() > 0) {
+            stringBuilder.append('\n');
+            for (ParamPair item : params) {
+                stringBuilder.append(String.format("Params($1$d):%2$s\n", item.getName(), item.getValue()));
+            }
+        }
 
-	public void setMethod(int method) {
-		this.method = method;
-	}
+        return super.toString();
+    }
 
-	public int getCallId() {
-		return callId;
-	}
+    public int getCallId() {
+        return callId;
+    }
 
-	public URI getUri() {
-		return uri;
-	}
+    public int getPriority() {
+        return this.priority;
+    }
 
-	public void setUri(URI uri) {
-		this.uri = uri;
-	}
 
-	public List<NameValuePair> getParamsMap() {
-		return params;
-	}
+    @Override
+    public String getMethod() {
+        return method;
+    }
 
-	public void setParamsMap(List<NameValuePair> params) {
-		this.params = params;
-	}
+    @Override
+    public Uri getUri() {
+        return uri;
+    }
 
-	public IEntityParser<?> getParser() {
-		return parser;
-	}
+    public void setUri(Uri uri) {
+        this.uri = uri;
+    }
 
-	public void setParser(IEntityParser<?> parser) {
-		this.parser = parser;
-	}
+    public IEntityParser<?> getParser() {
+        return parser;
+    }
 
-	public AbsEntityPacker<?> getPacker() {
-		return packer;
-	}
+    public void setParser(IEntityParser<?> parser) {
+        this.parser = parser;
+    }
 
-	public void setPacker(AbsEntityPacker<?> packer) {
-		this.packer = packer;
-	}
+    public AbsEntityPacker<?> getPacker() {
+        return packer;
+    }
 
-	public void setResStream(InputStream inputStream) {
-		this.resStream = inputStream;
-	}
+    public void setPacker(AbsEntityPacker<?> packer) {
+        this.packer = packer;
+    }
 
-	public void setResName(String resName) {
-		this.resName = resName;
-	}
+    @Override
+    public boolean containsHeader(String var1) {
+        if (headers == null)
+            return false;
 
-	public void setFileName(String fileName) {
-		this.fileName = fileName;
-	}
+        for (NameValuePair item : headers)
+            if (item.getName().equals(var1))
+                return true;
 
-	public InputStream getResStream() {
-		return this.resStream;
-	}
+        return false;
+    }
 
-	public void putAttr(String name, Object obj) {
-		if (attrs == null) {
-			attrs = new HashMap<String, Object>();
-		}
-		attrs.put(name, obj);
-	}
+    @Override
+    public NameValuePair[] getHeaders(String var1) {
+        if (headers == null)
+            return null;
 
-	public boolean containsAttr(String name) {
-		if (attrs == null)
-			return false;
-		return attrs.containsKey(name);
-	}
+        List<NameValuePair> result = new ArrayList<>();
 
-	@SuppressWarnings("unchecked")
-	public <K extends Object> K getAttr(String name) {
-		if (attrs == null)
-			return null;
-		if (!attrs.containsKey(name))
-			return null;
-		return (K) attrs.get(name);
-	}
+        for (NameValuePair item : headers)
+            if (item.getName().equals(var1))
+                result.add(item);
 
-	@Override
-	public String toString() {
-		StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(String.format("CallId:%1$d\n", callId));
-		stringBuilder.append(String.format("URI:%1$s\n", uri.toString()));
+        if (result.size() == 0)
+            return null;
 
-		int i = 0;
+        return (NameValuePair[]) headers.toArray();
+    }
 
-		for (NameValuePair pair : params) {
-			stringBuilder.append(String.format("Params($1$d):%2$s\n", i++, pair.getValue().toString()));
-		}
+    @Override
+    public NameValuePair getFirstHeader(String var1) {
+        if (headers == null)
+            return null;
 
-		return super.toString();
-	}
+        for (NameValuePair item : headers)
+            if (item.getName().equals(var1))
+                return item;
 
-	public HttpUriRequest obtainRequest() throws InternalException, PackException {
+        return null;
+    }
 
-		if (this.method == GET_METHOD) {
-			HttpGet request = new HttpGet(this.uri);
-			processReadyRequest(request);
-			return request;
-		} else {
-			HttpPost request = new HttpPost(this.uri);
+    @Override
+    public NameValuePair getLastHeader(String var1) {
+        if (headers == null)
+            return null;
 
-			processReadyRequest(request);
+        NameValuePair result = null;
 
-			if (this.params != null && this.params.size() > 0 || resStream != null || packer != null)
+        for (NameValuePair item : headers)
+            if (item.getName().equals(var1))
+                result = item;
 
-				try {
-					HttpEntity entity = null;
-					if (resStream != null) {
-						if (resName != null) {
-							if (fileName != null)
-								entity = new MultipartEntity(this.params, this.resStream, this.resName, this.fileName, HTTP.UTF_8);
-							else
-								entity = new MultipartEntity(this.params, this.resStream, this.resName, Const.POST_FILE_NAME, HTTP.UTF_8);
-						} else {
-							entity = new MultipartEntity(this.params, this.resStream, Const.POST_NAME, Const.POST_FILE_NAME, HTTP.UTF_8);
-						}
-					} else if (this.packer != null) {
-						try {
-							entity = packer.pack();
-						} catch (IOException e) {
-							throw new PackException(e);
-						} catch (JSONException e) {
-							throw new PackException(e);
-						}
-					} else if (this.params != null && this.params.size() > 0) {
-						if (isMultiPart)
-							entity = new MultipartEntity(params, HTTP.UTF_8);
-						// request.setEntity(new MultipartEntity(params,
-						// this.resStream, "", HTTP.UTF_8));
-						else
-							entity = new UrlEncodedFormEntity(this.params, HTTP.UTF_8);
-					}
+        return result;
+    }
 
-					if (supportGzip) {
-						request.setEntity(new GzipEntity(entity));
-					} else {
-						request.setEntity(entity);
-					}
+    @Override
+    public NameValuePair[] getAllHeaders() {
+        if (headers == null)
+            return null;
+        return (NameValuePair[]) headers.toArray();
+    }
 
-				} catch (UnsupportedEncodingException e) {
-					throw new PackException(e);
+    @Override
+    public void addHeader(NameValuePair var1) {
+        if (headers == null)
+            headers = new ArrayList<>();
+        headers.add(var1);
+    }
 
-				} catch (InternalException e) {
-					throw e;
-				}
-			request.getParams().toString();
-			return request;
-		}
-	}
+    @Override
+    public void addHeader(String var1, String var2) {
+        if (headers == null)
+            headers = new ArrayList<>();
+        headers.add(new NameValuePair(var1, var2));
+    }
 
-	public int getPriority() {
-		return this.priority;
-	}
+    @Override
+    public void setHeader(NameValuePair var1) {
+        if (var1 == null)
+            return;
 
-	@Override
-	public void processReadyRequest(HttpRequest request) {
+        if (headers == null)
+            headers = new ArrayList<>();
 
-	}
+        int index = 0;
+
+        while (index < headers.size()) {
+            if (headers.get(index).getName().equals(var1.getName())) {
+                headers.remove(index);
+                headers.add(index, var1);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void setHeader(String var1, String var2) {
+        setHeader(new NameValuePair(var1, var2));
+    }
+
+    @Override
+    public void setHeaders(NameValuePair[] var1) {
+        if (var1 == null)
+            return;
+
+        if (headers == null)
+            headers = new ArrayList<>();
+
+        for (NameValuePair item : var1)
+            headers.add(item);
+    }
+
+    @Override
+    public void removeHeader(NameValuePair var1) {
+
+        if (var1 == null)
+            return;
+
+        if (headers == null)
+            return;
+
+        int index = 0;
+
+        while (index < headers.size()) {
+            if (headers.get(index).getName().equals(var1.getName())) {
+                headers.remove(index);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void removeHeaders(String var1) {
+        if (var1 == null)
+            return;
+
+        if (headers == null)
+            return;
+
+        int index = 0;
+
+        while (index < headers.size()) {
+            if (headers.get(index).getName().equals(var1)) {
+                headers.remove(index);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public Iterator<NameValuePair> headerIterator() {
+        if (headers == null)
+            return null;
+
+        return headers.iterator();
+    }
+
+    @Override
+    public boolean containsParams(String var1) {
+        if (headers == null)
+            return false;
+
+        for (ParamPair item : params)
+            if (item.getName().equals(var1))
+                return true;
+
+        return false;
+    }
+
+    @Override
+    public ParamPair getParam(String var1) {
+        if (params == null)
+            return null;
+
+        List<ParamPair> result = new ArrayList<>();
+
+        for (ParamPair item : params)
+            if (item.getName().equals(var1))
+                return item;
+
+        return null;
+    }
+
+    @Override
+    public ParamPair[] getAllParams() {
+        if (params == null)
+            return null;
+        return (ParamPair[]) params.toArray();
+    }
+
+    @Override
+    public void addParam(ParamPair var1) {
+        if (params == null)
+            params = new ArrayList<>();
+        params.add(var1);
+    }
+
+    @Override
+    public void addParam(String var1, String var2) {
+        if (params == null)
+            params = new ArrayList<>();
+        params.add(new ParamPair(var1, var2));
+    }
+
+    @Override
+    public void setParam(ParamPair var1) {
+        if (var1 == null)
+            return;
+
+        if (params == null)
+            params = new ArrayList<>();
+
+        int index = 0;
+
+        while (index < params.size()) {
+            if (params.get(index).getName().equals(var1.getName())) {
+                params.remove(index);
+                params.add(index, var1);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void setParam(String var1, String var2) {
+        setParam(new ParamPair(var1, var2));
+    }
+
+    @Override
+    public void setParams(ParamPair[] var1) {
+        if (var1 == null)
+            return;
+
+        if (params == null)
+            params = new ArrayList<>();
+
+        for (ParamPair item : var1)
+            params.add(item);
+    }
+
+    @Override
+    public void removeParam(ParamPair var1) {
+        if (var1 == null)
+            return;
+
+        if (params == null)
+            return;
+
+        int index = 0;
+
+        while (index < params.size()) {
+            if (params.get(index).getName().equals(var1.getName())) {
+                params.remove(index);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void removeParam(String var1) {
+        if (var1 == null)
+            return;
+
+        if (params == null)
+            return;
+
+        int index = 0;
+
+        while (index < params.size()) {
+            if (params.get(index).getName().equals(var1)) {
+                params.remove(index);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public Iterator<ParamPair> paramIterator() {
+        if (params == null)
+            return null;
+
+        return params.iterator();
+    }
 }

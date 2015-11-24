@@ -1,25 +1,23 @@
 package com.sea_monster.network.parser;
 
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-
-import java.io.IOException;
-
 import com.sea_monster.exception.InternalException;
 import com.sea_monster.exception.ParseException;
+import com.sea_monster.network.NameValuePair;
 import com.sea_monster.network.StatusCallback;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 public interface IEntityParser<T> {
 
-    public void onHeaderParsed(Header[] headers);
+    public void onHeaderParsed(NameValuePair[] headers);
 
-	public T parse(HttpEntity entity) throws IOException, ParseException, InternalException;
+    public T parse(InputStream inputStream) throws IOException, ParseException, InternalException;
 
-	public T parse(HttpEntity entity, StatusCallback<?> callback) throws IOException, ParseException, InternalException;
+    public T parse(InputStream inputStream, StatusCallback<?> callback) throws IOException, ParseException, InternalException;
 
-	public T parseGzip(HttpEntity entity) throws IOException, ParseException, InternalException;
+    public T parseGzip(InputStream inputStream) throws IOException, ParseException, InternalException;
 
-	public T parseGzip(HttpEntity entity, StatusCallback<?> callback) throws IOException, ParseException, InternalException;
+    public T parseGzip(InputStream inputStream, StatusCallback<?> callback) throws IOException, ParseException, InternalException;
 }
