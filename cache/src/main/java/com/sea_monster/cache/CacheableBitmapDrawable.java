@@ -37,7 +37,6 @@ public class CacheableBitmapDrawable extends BitmapDrawable {
 
     private BaseCache.RecyclePolicy mRecyclePolicy;
 
-    // Number of Views currently displaying bitmap
     private int mDisplayingCount;
 
     // Has it been displayed yet

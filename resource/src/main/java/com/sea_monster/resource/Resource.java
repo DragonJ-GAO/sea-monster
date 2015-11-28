@@ -3,15 +3,19 @@ package com.sea_monster.resource;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.text.TextUtils;
 
 import com.sea_monster.common.ParcelUtils;
+import com.sea_monster.common.UriUtils;
+
+import java.util.Map;
 
 public class Resource implements Parcelable {
 
     protected Uri uri;
 
-    public Resource() {
-    }
+
+
 
     public Resource(Uri uri) {
         this.uri = uri;
@@ -29,6 +33,9 @@ public class Resource implements Parcelable {
         this(Uri.parse(uriPath));
     }
 
+
+
+
     public Uri getUri() {
         return this.uri;
     }
@@ -42,6 +49,7 @@ public class Resource implements Parcelable {
     public int describeContents() {
         return 0;
     }
+
 
 
     public boolean equals(Resource o) {

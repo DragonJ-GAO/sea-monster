@@ -6,6 +6,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.util.Log;
 
 import java.io.ByteArrayInputStream;
@@ -19,13 +20,14 @@ import java.io.InputStream;
 public class BitmapCacheWrapper extends BaseCache {
 
 
-    BaseCache mCache;
-    Resources mResources;
-    ContentResolver mContentResolver;
-    private BitmapMemoryLruCache mMemoryCache;
-    private int mSizeLimit;
+    protected BaseCache mCache;
+    protected Resources mResources;
+    protected ContentResolver mContentResolver;
+    protected BitmapMemoryLruCache mMemoryCache;
+    protected int mSizeLimit;
 
-    private RecyclePolicy mRecyclePolicy;
+    protected RecyclePolicy mRecyclePolicy;
+    protected final int CACHE_STORE_LIMIT = 1048576;
 
     BitmapCacheWrapper(Context context) {
         if (context == null)
@@ -99,6 +101,7 @@ public class BitmapCacheWrapper extends BaseCache {
 
     /**
      * Returns the value for {@code url}. This will check all caches currently enabled. <p/> If you
+     * Returns the value for {@code url}. This will check all caches currently enabled. <p/> If you
      * have the disk cache enabled, you should not call this method from main/UI thread.
      *
      * @param uri        - String representing the URI of the image
@@ -113,9 +116,7 @@ public class BitmapCacheWrapper extends BaseCache {
         // First try Memory Cache
         result = getFromMemoryCache(uri);
 
-        if (null == result) {
-            // Memory Cache failed, so try Disk Cache
-
+        if (null == result || !isMainThread()) {
             if (uri.getScheme().equals("file")) {
                 Log.d("BitmapCacheWrapper", "file:" + uri.toString());
                 result = getFromDisk(uri, decodeOpts);
@@ -173,14 +174,14 @@ public class BitmapCacheWrapper extends BaseCache {
         if (uri != null) {
 
             result = decodeBitmap(new ContentStreamProvider(mContentResolver, uri), uri.toString(), decodeOpts, mSizeLimit);
-
-            if (null != result) {
-                if (null != mMemoryCache) {
-                    mMemoryCache.put(result);
-                }
-            } else {
-                mCache.remove(uri);
-            }
+/**Content数据不应该插入缓冲*/
+//            if (null != result) {
+////                if (null != mMemoryCache) {
+////                    mMemoryCache.put(result);
+////                }
+//            } else {
+//                mCache.remove(uri);
+//            }
         }
 
         return result;
@@ -198,14 +199,22 @@ public class BitmapCacheWrapper extends BaseCache {
                 return null;
 
             result = decodeBitmap(new FileInputStreamProvider(file), uri.toString(), decodeOpts);
-
-            if (null != result) {
-                if (null != mMemoryCache) {
-                    mMemoryCache.put(result);
-                }
-            } else {
-                mCache.remove(uri);
-            }
+            /**Disk数据不应该插入缓冲*/
+//            if (null != result) {
+//                if (null != mMemoryCache) {
+//                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB_MR1) {
+//                        if (result.getBitmap().getRowBytes() * result.getBitmap().getHeight() < CACHE_STORE_LIMIT)
+//                            mMemoryCache.put(result);
+//                    } else {
+//                        if (result.getBitmap().getByteCount() < CACHE_STORE_LIMIT)
+//                            mMemoryCache.put(result);
+//                    }
+//
+//                }
+//
+//            } else {
+//                mCache.remove(uri);
+//            }
         }
 
         return result;
@@ -372,6 +381,22 @@ public class BitmapCacheWrapper extends BaseCache {
         }
     }
 
+    @Override
+    public File getFile(Uri uri) {
+        if (null != mCache) {
+            return mCache.getFile(uri);
+        }
+        return null;
+    }
+
+    @Override
+    public InputStream getInputStream(Uri uri) {
+        if (null != mCache) {
+            return mCache.getInputStream(uri);
+        }
+        return null;
+    }
+
     /**
      * This method iterates through the memory cache (if enabled) and removes any entries which are
      * not currently being displayed. A good place to call this would be from {@link
@@ -420,8 +445,8 @@ public class BitmapCacheWrapper extends BaseCache {
         return null;
     }
 
-    private CacheableBitmapDrawable decodeBitmap(InputStreamProvider ip, String url,
-                                                 BitmapFactory.Options opts) {
+    protected CacheableBitmapDrawable decodeBitmap(InputStreamProvider ip, String url,
+                                                   BitmapFactory.Options opts) {
         return decodeBitmap(ip, url, opts, 0);
     }
 

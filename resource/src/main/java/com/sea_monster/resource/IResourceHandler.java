@@ -9,21 +9,21 @@ import com.sea_monster.network.StoreStatusCallback;
 /**
  * Created by DragonJ on 15/1/27.
  */
-public interface IResourceHandler<T> {
-    public boolean exists(Resource resource);
+public interface IResourceHandler<T, K extends Resource> {
+    public boolean exists(K resource);
 
-    public T get(Resource resource);
+    public T get(K resource);
 
-    public File getFile(Resource resource);
+    public File getFile(K resource);
 
-    public InputStream getInputStream(Resource resource) throws IOException;
+    public InputStream getInputStream(K resource) throws IOException;
 
-    public void store(Resource resource, InputStream is) throws IOException;
+    public void store(K resource, InputStream is) throws IOException;
 
-    public void store(Resource resource, InputStream is, long total, StoreStatusCallback statusCallback)
+    public void store(K resource, InputStream is, long total, StoreStatusCallback statusCallback)
             throws IOException;
 
     public void cleanup();
 
-    public void remove(Resource resource);
+    public void remove(K resource);
 }

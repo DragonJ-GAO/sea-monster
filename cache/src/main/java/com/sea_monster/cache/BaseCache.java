@@ -114,6 +114,10 @@ public class BaseCache {
         }
     }
 
+    protected static boolean isMainThread(){
+        return Looper.myLooper() == Looper.getMainLooper();
+    }
+
     /**
      * The disk cache only accepts a reduced range of characters for the key values. This method
      * simply return a MD5 hash of the url.
@@ -179,10 +183,10 @@ public class BaseCache {
         InputStream getInputStream();
     }
 
-    static class FileInputStreamProvider implements InputStreamProvider {
+    protected static class FileInputStreamProvider implements InputStreamProvider {
         final File mFile;
 
-        FileInputStreamProvider(File file) {
+        public FileInputStreamProvider(File file) {
             mFile = file;
         }
 
@@ -197,7 +201,7 @@ public class BaseCache {
         }
     }
 
-    static class ContentStreamProvider implements InputStreamProvider {
+    protected static class ContentStreamProvider implements InputStreamProvider {
         final Uri mContent;
         final ContentResolver mResolver;
 
@@ -238,7 +242,7 @@ public class BaseCache {
         }
     }
 
-    final class SnapshotInputStreamProvider implements InputStreamProvider {
+    protected final class SnapshotInputStreamProvider implements InputStreamProvider {
         final String mKey;
 
         SnapshotInputStreamProvider(String key) {

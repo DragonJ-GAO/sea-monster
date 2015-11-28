@@ -44,6 +44,7 @@ public class ResourceHandler extends Observable {
     BaseCache mBaseCache;
     Map<String, IResourceHandler> mHandlerMap;
     Map<Resource, AbstractHttpRequest<File>> mRequestQueue;
+    CachedImageResourceHandler mImageCacheHandler;
     Context mContext;
 
 
@@ -151,10 +152,13 @@ public class ResourceHandler extends Observable {
         if (mDiskCache == null)
             mDiskCache = new DiskCacheWrapper.Builder().setCache(mBaseCache).build();
 
+        if (mBitmapCache != null)
+            mImageCacheHandler = new CachedImageResourceHandler(context, mBitmapCache);
+
         if (mHandlerMap == null) {
             mHandlerMap = new HashMap<>();
             mHandlerMap.put("*", new CachedResourceHandler(context, mDiskCache));
-            mHandlerMap.put("image", new CachedImageResourceHandler(context, mBitmapCache));
+            mHandlerMap.put("image", mImageCacheHandler);
         }
 
     }
@@ -164,7 +168,7 @@ public class ResourceHandler extends Observable {
             mBitmapCache = new BitmapCacheWrapper.Builder(mContext).setCache(mBaseCache).build();
     }
 
-    public AbstractHttpRequest<File> requestResource(final Resource resource, final ResCallback callback) throws URISyntaxException {
+    public synchronized AbstractHttpRequest<File> requestResource(final Resource resource, final ResCallback callback) throws URISyntaxException {
 
         if (mRequestQueue.containsKey(resource))
             return mRequestQueue.get(resource);
@@ -176,6 +180,7 @@ public class ResourceHandler extends Observable {
                     callback.onComplete(request, obj);
                 setChanged();
                 mRequestQueue.remove(resource);
+                Log.d("requestResource", "remove:" + resource.toString());
                 ResourceHandler.this.notifyObservers(new RequestCallback(resource, true));
                 Log.d("requestResource", obj.getPath());
 
@@ -188,6 +193,7 @@ public class ResourceHandler extends Observable {
                     callback.onFailure(request, e);
                 setChanged();
                 mRequestQueue.remove(resource);
+                Log.d("requestResource", "remove:" + resource.toString());
                 ResourceHandler.this.notifyObservers(new RequestCallback(resource, false));
                 Log.d("requestResource", e.getMessage());
             }
@@ -195,6 +201,7 @@ public class ResourceHandler extends Observable {
         AbstractHttpRequest<File> request = resRequest.obtainRequest();
 
         mRequestQueue.put(resource, request);
+        Log.d("requestResource", "enter:"+resource.toString());
         mHandler.executeRequest(request);
         return request;
     }
@@ -275,14 +282,14 @@ public class ResourceHandler extends Observable {
         return mDiskCache.getFile(resource.getUri());
     }
 
-    public CacheableBitmapDrawable getDrawable(Resource resource) {
+    public CacheableBitmapDrawable getDrawable(ImageResource resource) {
         if (resource == null || resource.getUri() == null)
             return null;
 
         if (mBitmapCache == null)
             return null;
 
-        return mBitmapCache.get(resource.getUri());
+        return mImageCacheHandler.get(resource);
     }
 
     IResourceHandler getResourceHandler(String contentType) {

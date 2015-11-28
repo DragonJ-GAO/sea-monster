@@ -19,6 +19,7 @@ import java.util.concurrent.ThreadFactory;
 
 import com.sea_monster.cache.CacheableImageView;
 import com.sea_monster.common.BackgroundThread;
+import com.sea_monster.resource.ImageResource;
 import com.sea_monster.resource.Resource;
 import com.sea_monster.resource.ResourceHandler;
 
@@ -50,13 +51,13 @@ public class AsyncImageView extends CacheableImageView implements Observer {
 
     @Override
     public void update(Observable observable, Object data) {
-        if(mResource == null)
+        if (mResource == null)
             return;
 
         if (data instanceof ResourceHandler.RequestCallback) {
             ResourceHandler.RequestCallback callback = (ResourceHandler.RequestCallback) data;
             if (callback != null && callback.isSuccess())
-                if (mResource.equals(callback.getResource())) {
+                if (callback.getResource().getUri().equals(mResource.getOriginalUri())) {
                     post(new Runnable() {
                         @Override
                         public void run() {
@@ -92,7 +93,7 @@ public class AsyncImageView extends CacheableImageView implements Observer {
     /**
      * @param context
      */
-    Resource mResource;
+    ImageResource mResource;
     Future<?> mCurrentRunnable;
     Drawable mDefaultDrawable;
     Runnable mAttachedRunnable;
@@ -122,7 +123,7 @@ public class AsyncImageView extends CacheableImageView implements Observer {
         a.recycle();
     }
 
-    public Resource getResource() {
+    public ImageResource getResource() {
         return mResource;
     }
 
@@ -157,7 +158,7 @@ public class AsyncImageView extends CacheableImageView implements Observer {
         setImageDrawable(mDefaultDrawable);
     }
 
-    public void setResource(Resource resource) {
+    public void setResource(ImageResource resource) {
 
         final Resource previous = getResource();
         this.mResource = resource;
@@ -235,9 +236,9 @@ public class AsyncImageView extends CacheableImageView implements Observer {
 
         private final WeakReference<AsyncImageView> mImageView;
         private final ResourceHandler mHandler;
-        private final Resource mResource;
+        private final ImageResource mResource;
 
-        public PhotoLoadRunnable(AsyncImageView imageView, ResourceHandler handler, final Resource resource) {
+        public PhotoLoadRunnable(AsyncImageView imageView, ResourceHandler handler, final ImageResource resource) {
             mImageView = new WeakReference<AsyncImageView>(imageView);
             mHandler = handler;
             mResource = resource;
@@ -257,7 +258,7 @@ public class AsyncImageView extends CacheableImageView implements Observer {
             if (diskDrawable != null && diskDrawable.getBitmap() != null) {
 
 
-                if (imageView.status == STATUS_EMPTY && imageView.getResource().equals(mResource)&&imageView.isAttached) {
+                if (imageView.status == STATUS_EMPTY && imageView.getResource().equals(mResource) && imageView.isAttached) {
                     final BitmapDrawable drawable = diskDrawable;
                     imageView.post(new Runnable() {
                         public void run() {
@@ -305,13 +306,25 @@ public class AsyncImageView extends CacheableImageView implements Observer {
                     };
                 }
 
-                if (mResource.getUri().getScheme().equals("http") || mResource.getUri().getScheme().equals("https")) {
-                    try {
-                        mHandler.requestResource(mResource);
-                    } catch (URISyntaxException e) {
-                        e.printStackTrace();
+                if (mResource.isThumb()) {
+                    if (mResource.getOriginalUri().getScheme().equals("http") || mResource.getOriginalUri().getScheme().equals("https")) {
+                        try {
+                            mHandler.requestResource(new ImageResource(mResource.getOriginalUri()));
+                        } catch (URISyntaxException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                } else {
+                    if (mResource.getUri().getScheme().equals("http") || mResource.getUri().getScheme().equals("https")) {
+                        try {
+                            mHandler.requestResource(mResource);
+                        } catch (URISyntaxException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
+
 
             }
         }

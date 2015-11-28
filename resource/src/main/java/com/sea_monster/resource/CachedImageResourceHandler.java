@@ -1,7 +1,10 @@
 package com.sea_monster.resource;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,31 +12,79 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import com.sea_monster.cache.BitmapCacheWrapper;
+import com.sea_monster.cache.CacheableBitmapDrawable;
 import com.sea_monster.network.StoreStatusCallback;
 
 /**
  * Created by DragonJ on 15/1/29.
  */
-public class CachedImageResourceHandler implements IResourceHandler<BitmapDrawable> {
+public class CachedImageResourceHandler implements IResourceHandler<CacheableBitmapDrawable, ImageResource> {
 
     BitmapCacheWrapper cache;
+    Context mContext;
 
     public CachedImageResourceHandler(Context context, BitmapCacheWrapper cache) {
         this.cache = cache;
+        mContext = context;
     }
 
     @Override
-    public boolean exists(Resource resource) {
+    public boolean exists(ImageResource resource) {
         return cache.contains(resource.getUri());
     }
 
     @Override
-    public BitmapDrawable get(Resource resource) {
-        return cache.get(resource.getUri());
+    public CacheableBitmapDrawable get(ImageResource resource) {
+        if (cache.contains(resource.getUri()))
+            return cache.get(resource.getUri(), null);
+
+        if (resource.isThumb()) {
+            Uri originalUri = resource.getOriginalUri();
+            if (originalUri.getScheme().equals("http") || originalUri.getScheme().equals("https")) {
+                File file = cache.getFile(resource.getOriginalUri());
+                if (file != null && file.exists()) {
+                    try {
+                        Bitmap thumbBitmap = CompressUtils.compressResource(mContext, Uri.fromFile(file), resource.getLimitWidth(), resource.getLimitWidth(), resource.isCorp());
+                        if (thumbBitmap != null) {
+                            return cache.put(resource.getUri(), thumbBitmap);
+                        }
+                    } catch (IOException e) {
+                        Log.e("Cache_Handler_Compress", e.getMessage(), e);
+                    }
+                }
+            } else if (originalUri.getScheme().equals("file")) {
+                File file = new File(originalUri.getPath());
+                if (file.exists()) {
+                    try {
+                        Bitmap thumbBitmap = CompressUtils.compressResource(mContext, originalUri, resource.getLimitWidth(), resource.getLimitWidth(), resource.isCorp());
+
+                        if (thumbBitmap != null) {
+                            return cache.put(resource.getUri(), thumbBitmap);
+                        }
+                    } catch (IOException e) {
+                        Log.e("Cache_Handler_Compress", e.getMessage(), e);
+                    }
+                }
+            } else if (resource.getUri().getScheme().equals("content")) {
+                try {
+                    Bitmap thumbBitmap = CompressUtils.compressResource(mContext, originalUri, resource.getLimitWidth(), resource.getLimitWidth(), resource.isCorp());
+                    if (thumbBitmap != null) {
+                        return cache.put(resource.getUri(), thumbBitmap);
+                    }
+                } catch (IOException e) {
+                    Log.e("Cache_Handler_Compress", e.getMessage(), e);
+                }
+            } else {
+                throw new RuntimeException("Unknown schema:" + resource.getUri().getScheme());
+            }
+
+        }
+
+        return null;
     }
 
     @Override
-    public File getFile(Resource resource) {
+    public File getFile(ImageResource resource) {
 
         File file = cache.getFileFromDiskCache(resource.getUri());
         if (file != null)
@@ -42,7 +93,7 @@ public class CachedImageResourceHandler implements IResourceHandler<BitmapDrawab
     }
 
     @Override
-    public InputStream getInputStream(Resource resource) throws IOException {
+    public InputStream getInputStream(ImageResource resource) throws IOException {
         File file = cache.getFileFromDiskCache(resource.getUri());
         if (file != null)
             return new FileInputStream(file);
@@ -50,13 +101,13 @@ public class CachedImageResourceHandler implements IResourceHandler<BitmapDrawab
     }
 
     @Override
-    public void store(Resource resource, InputStream is) throws IOException {
+    public void store(ImageResource resource, InputStream is) throws IOException {
         cache.put(resource.getUri(), is);
     }
 
     @Override
-    public void store(Resource resource, InputStream is, long total, StoreStatusCallback statusCallback) throws IOException {
-        store(resource, new ProgressInputStreamWrapper(is,total, statusCallback));
+    public void store(ImageResource resource, InputStream is, long total, StoreStatusCallback statusCallback) throws IOException {
+        store(resource, new ProgressInputStreamWrapper(is, total, statusCallback));
     }
 
     @Override
@@ -65,7 +116,7 @@ public class CachedImageResourceHandler implements IResourceHandler<BitmapDrawab
     }
 
     @Override
-    public void remove(Resource resource) {
+    public void remove(ImageResource resource) {
         cache.remove(resource.getUri());
     }
 }

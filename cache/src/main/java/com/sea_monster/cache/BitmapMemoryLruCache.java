@@ -41,7 +41,7 @@ final class BitmapMemoryLruCache extends LruCache<String, CacheableBitmapDrawabl
 //                : null;
     }
 
-    CacheableBitmapDrawable put(CacheableBitmapDrawable value) {
+    public CacheableBitmapDrawable put(CacheableBitmapDrawable value) {
         if (null != value) {
             value.setCached(true);
             return put(value.getUrl(), value);
@@ -50,7 +50,7 @@ final class BitmapMemoryLruCache extends LruCache<String, CacheableBitmapDrawabl
         return null;
     }
 
-    BaseCache.RecyclePolicy getRecyclePolicy() {
+    protected BaseCache.RecyclePolicy getRecyclePolicy() {
         return mRecyclePolicy;
     }
 
@@ -60,7 +60,7 @@ final class BitmapMemoryLruCache extends LruCache<String, CacheableBitmapDrawabl
     }
 
     @Override
-    protected void entryRemoved(boolean evicted, String key, CacheableBitmapDrawable oldValue,
+    public void entryRemoved(boolean evicted, String key, CacheableBitmapDrawable oldValue,
             CacheableBitmapDrawable newValue) {
         // Notify the wrapper that it's no longer being cached
         oldValue.setCached(false);

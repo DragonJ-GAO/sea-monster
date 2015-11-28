@@ -22,7 +22,7 @@ import com.sea_monster.network.StoreStatusCallback;
 /**
  * Created by DragonJ on 15/1/27.
  */
-public class CachedResourceHandler implements IResourceHandler<File> {
+public class CachedResourceHandler implements IResourceHandler<File, Resource> {
 
     public DiskCacheWrapper mCache;
 
