@@ -1,4 +1,4 @@
-package com.sea_monster.widget;
+package me.add1.widget;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

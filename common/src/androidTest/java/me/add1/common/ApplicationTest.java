@@ -1,4 +1,4 @@
-package com.sea_monster.common;
+package me.add1.common;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

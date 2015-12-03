@@ -1,4 +1,4 @@
-package com.sea_monster.cache;
+package me.add1.cache;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

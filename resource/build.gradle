@@ -1,8 +1,8 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven'
 
-version '0.1.0'
-group 'com.sea_monster'
+version '0.2.2'
+group 'me.add1'
 
 android {
     compileSdkVersion 21
@@ -44,11 +44,11 @@ android.libraryVariants.all { variant ->
 uploadArchives {
     repositories {
         mavenDeployer {
-            repository(url: uri('http://nexus.add1.me:8101/nexus/content/repositories/thirdparty/')) {
-                authentication(userName: 'admin', password: 'admin123')
+            repository(url: uri("http://nexus.genshuixue.com/nexus/content/repositories/thirdparty/")) {
+                authentication(userName: 'deployment', password: 'baijiahulian')
             }
-            snapshotRepository(url: uri('http://nexus.add1.me:8101/nexus/content/repositories/thirdparty/')) {
-                authentication(userName: 'admin', password: 'admin123')
+            snapshotRepository(url: uri("http://nexus.genshuixue.com/nexus/content/repositories/thirdparty/")) {
+                authentication(userName: 'deployment', password: 'baijiahulian')
             }
         }
     }

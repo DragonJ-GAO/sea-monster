@@ -1,4 +1,8 @@
 apply plugin: 'com.android.library'
+apply plugin: 'maven'
+
+version '0.2.2'
+group 'me.add1'
 
 android {
     compileSdkVersion 23
@@ -23,4 +27,17 @@ dependencies {
     compile project(':network')
     compile 'com.squareup.okhttp:okhttp:2.6.0'
     compile 'com.squareup.okio:okio:1.6.0'
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri("http://nexus.genshuixue.com/nexus/content/repositories/thirdparty/")) {
+                authentication(userName: 'deployment', password: 'baijiahulian')
+            }
+            snapshotRepository(url: uri("http://nexus.genshuixue.com/nexus/content/repositories/thirdparty/")) {
+                authentication(userName: 'deployment', password: 'baijiahulian')
+            }
+        }
+    }
 }

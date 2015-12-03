@@ -1,4 +1,4 @@
-package com.sea_monster.network;
+package me.add1.network;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

@@ -1,4 +1,4 @@
-package com.sea_monster.resource;
+package me.add1.resource;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
