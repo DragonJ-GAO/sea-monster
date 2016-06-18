@@ -70,7 +70,7 @@ public class ResourceHandler extends Observable {
     public final static class Builder {
 
         public final static int HTTP_APACHE = 0;
-        public final static int HTTP_OKHTTP = 0;
+        public final static int HTTP_OKHTTP = 1;
 
         private BaseCache cache;
 
@@ -180,10 +180,7 @@ public class ResourceHandler extends Observable {
                     callback.onComplete(request, obj);
                 setChanged();
                 mRequestQueue.remove(resource);
-                Log.d("requestResource", "remove:" + resource.toString());
                 ResourceHandler.this.notifyObservers(new RequestCallback(resource, true));
-                Log.d("requestResource", obj.getPath());
-
 
             }
 
@@ -193,15 +190,12 @@ public class ResourceHandler extends Observable {
                     callback.onFailure(request, e);
                 setChanged();
                 mRequestQueue.remove(resource);
-                Log.d("requestResource", "remove:" + resource.toString());
                 ResourceHandler.this.notifyObservers(new RequestCallback(resource, false));
-                Log.d("requestResource", e.getMessage());
             }
         };
         AbstractHttpRequest<File> request = resRequest.obtainRequest();
 
         mRequestQueue.put(resource, request);
-        Log.d("requestResource", "enter:"+resource.toString());
         mHandler.executeRequest(request);
         return request;
     }
@@ -219,7 +213,6 @@ public class ResourceHandler extends Observable {
                 setChanged();
                 mRequestQueue.remove(resource);
                 ResourceHandler.this.notifyObservers(new RequestCallback(resource, true));
-                Log.d("requestResource", obj.getPath());
             }
 
             @Override
@@ -229,7 +222,6 @@ public class ResourceHandler extends Observable {
                 setChanged();
                 mRequestQueue.remove(resource);
                 ResourceHandler.this.notifyObservers(new RequestCallback(resource, false));
-                Log.d("requestResource", e.getMessage());
             }
         };
         AbstractHttpRequest<File> request = resRequest.obtainRequest();
