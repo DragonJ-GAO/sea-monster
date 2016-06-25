@@ -3,11 +3,12 @@ package me.add1.network;
 import android.util.Pair;
 
 import java.io.InputStream;
+import java.util.Comparator;
 
 /**
  * Created by dragonj on 15/11/19.
  */
-public class ParamPair extends Pair<String, Object> {
+public class ParamPair extends Pair<String, Object> implements Comparable<ParamPair>{
     public ParamPair(String name, InputStream value) {
         super(name, value);
     }
@@ -51,4 +52,12 @@ public class ParamPair extends Pair<String, Object> {
     public Object getValue(){
         return second;
     }
+
+    @Override
+    public int compareTo(ParamPair another) {
+        if (another == null)
+            throw new RuntimeException("compare on a null object");
+        return getName().compareTo(another.getName());
+    }
+
 }

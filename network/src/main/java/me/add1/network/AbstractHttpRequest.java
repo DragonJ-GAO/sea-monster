@@ -312,7 +312,14 @@ public abstract class AbstractHttpRequest<T> implements HttpRequest, HttpRequest
     public ParamPair[] getAllParams() {
         if (params == null)
             return null;
-        return (ParamPair[]) params.toArray();
+
+        ParamPair[] paramPairs = new ParamPair[params.size()];
+        int index= 0 ;
+        for (ParamPair item : params){
+            paramPairs[index++] = item;
+        }
+
+        return paramPairs;
     }
 
     @Override

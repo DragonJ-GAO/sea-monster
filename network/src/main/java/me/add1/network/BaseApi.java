@@ -18,11 +18,12 @@ import java.util.Map;
 public class BaseApi {
 
     protected Context context;
-    protected NetworkManager manager;
+    protected HttpHandler handler;
 
-    public BaseApi(NetworkManager manager, Context context) {
+    public BaseApi(HttpHandler handler, Context context) {
+        this.handler = handler;
         this.context = context;
-        callMap = new HashMap<WeakReference<ApiCallback>, List<AbstractHttpRequest>>();
+        callMap = new HashMap<>();
     }
 
     protected Map<WeakReference<ApiCallback>, List<AbstractHttpRequest>> callMap;
@@ -37,6 +38,11 @@ public class BaseApi {
                 callMap.put(callback, requests);
             }
         }
+    }
+
+    protected final void recordRequest(ApiCallback callback, AbstractHttpRequest request){
+        WeakReference<ApiCallback> weakReference = new WeakReference<ApiCallback>(callback);
+        recordRequest(weakReference, request);
     }
 
     protected final <T extends ApiCallback> void releaseRequest(WeakReference<T> callback, RequestProcess request) {
@@ -56,7 +62,7 @@ public class BaseApi {
     }
 
     public void cancelReqeust(AbstractHttpRequest<?> callId) {
-        manager.cancelRequest(callId);
+        handler.cancelRequest(callId);
     }
 
     public void cancelReqeust(ApiCallback callback) {
@@ -74,7 +80,7 @@ public class BaseApi {
                 ids.add(callId);
             }
             for (AbstractHttpRequest request : requests) {
-                manager.cancelRequest(request);
+                handler.cancelRequest(request);
             }
         }
     }
@@ -108,5 +114,10 @@ public class BaseApi {
                 weakCallback.get().onFailure(request,  e);
         }
 
+    }
+
+    protected void execute(AbstractHttpRequest<?> abstractHttpRequest, ApiCallback<?> callback){
+        recordRequest(callback, abstractHttpRequest);
+        handler.executeRequest(abstractHttpRequest);
     }
 }

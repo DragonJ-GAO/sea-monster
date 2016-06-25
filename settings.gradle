@@ -1,1 +1,1 @@
-include ':cache', ':widget', ':common', ':network', ':resource', ':test', ':network_okhttp'
+include ':common', ':resource', ':common', ':network', ':network_okhttp', ':cache', ':resource', ':widget', ':test'

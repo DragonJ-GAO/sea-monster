@@ -74,11 +74,14 @@ public class BaseCache {
 
             if (dir != null && cache.validateLocation(dir)) {
                 cache.mDiskCacheLocation = TextUtils.isEmpty(type) ? dir : new File(dir, type);
+                cache.mTempDir = new File(dir, "tmp");
             } else {
                 cache.mDiskCacheLocation = TextUtils.isEmpty(type) ? context.getCacheDir() : new File(context.getCacheDir(), type);
+                cache.mTempDir = new File(context.getCacheDir(), "tmp");
             }
 
             try {
+                cache.mTempDir.mkdirs();
                 cache.mDiskCache = DiskLruCache.open(cache.mDiskCacheLocation, 0, 1, Constants.DEFAULT_DISK_CACHE_MAX_SIZE_MB * Constants.MEGABYTE);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -87,7 +90,7 @@ public class BaseCache {
             cache.mDiskCacheEditLocks = new HashMap<>();
             cache.mDiskCacheFlusherExecutor = new ScheduledThreadPoolExecutor(Constants.DEFAULT_DISK_CACHE_MAX_SIZE_MB);
             cache.mDiskCacheFlusherRunnable = new DiskCacheFlushRunnable(cache.mDiskCache);
-            cache.mTempDir = context.getCacheDir();
+
             return cache;
         }
 
@@ -114,7 +117,7 @@ public class BaseCache {
         }
     }
 
-    protected static boolean isMainThread(){
+    protected static boolean isMainThread() {
         return Looper.myLooper() == Looper.getMainLooper();
     }
 
@@ -221,7 +224,7 @@ public class BaseCache {
 
             String path;
 
-            if(cursor.getCount()==0)
+            if (cursor.getCount() == 0)
                 return null;
 
             cursor.moveToFirst();
@@ -229,8 +232,8 @@ public class BaseCache {
             path = cursor.getString(1);
             cursor.close();
 
-            if(TextUtils.isEmpty(path))
-            return null;
+            if (TextUtils.isEmpty(path))
+                return null;
 
             try {
                 FileInputStream stream = new FileInputStream(path);
@@ -404,8 +407,11 @@ public class BaseCache {
 
                     try {
                         DiskLruCache.Editor editor = mDiskCache.edit(key);
-                        IoUtils.copy(tmpFile, editor.newOutputStream(0));
-                        editor.commit();
+
+                        if (editor != null) {
+                            IoUtils.copy(tmpFile, editor.newOutputStream(0));
+                            editor.commit();
+                        }
 
                     } catch (IOException e) {
                         Log.e(Constants.LOG_TAG, "Error writing to disk cache. URL: " + uri, e);

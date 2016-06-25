@@ -103,7 +103,7 @@ public class MainActivity extends ActionBarActivity {
 
                 holder = new ViewHolder();
                 holder.icon = (AsyncImageView) convertView.findViewById(android.R.id.icon);
-
+                holder.icon.setShape(AsyncImageView.Shape.ROUNDED);
                 convertView.setTag(holder);
             } else {
                 holder = (ViewHolder) convertView.getTag();

@@ -1,8 +1,9 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven'
 
-version '0.2.4'
-group 'me.add1'
+version '0.1.2'
+group 'com.bjhl.plugins'
+
 android {
     compileSdkVersion 21
     buildToolsVersion "21.1.2"
@@ -23,16 +24,18 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile project(':resource')
+    compile project(':cache')
+    compile project(':network')
+    compile project(':network_okhttp')
 }
 
 uploadArchives {
     repositories {
         mavenDeployer {
-            repository(url: uri("http://nexus.genshuixue.com/nexus/content/repositories/thirdparty/")) {
+            repository(url: uri("http://nexus.baijiahulian.com/nexus/content/repositories/thirdparty/")) {
                 authentication(userName: 'deployment', password: 'baijiahulian')
             }
-            snapshotRepository(url: uri("http://nexus.genshuixue.com/nexus/content/repositories/thirdparty/")) {
+            snapshotRepository(url: uri("http://nexus.baijiahulian.com/nexus/content/repositories/thirdparty/")) {
                 authentication(userName: 'deployment', password: 'baijiahulian')
             }
         }

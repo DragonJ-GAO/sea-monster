@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="me.add1.resource">
+
+    <application android:allowBackup="true">
+
+    </application>
+
+</manifest>

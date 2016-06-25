@@ -31,6 +31,8 @@ public class AsyncImageView extends CacheableImageView implements Observer {
     static final ExecutorService mMultiThreadExecutor;
     static final boolean DEBUG = true;
 
+    protected float mRadius;
+
     static {
         int coreNum = Math.round(Runtime.getRuntime().availableProcessors());
         int threadNum = 1;
@@ -41,13 +43,13 @@ public class AsyncImageView extends CacheableImageView implements Observer {
             case 2:
                 threadNum = coreNum;
                 break;
-
             default:
                 threadNum = 3;
                 break;
         }
         mMultiThreadExecutor = Executors.newFixedThreadPool(threadNum, new PhotoThreadFactory());
     }
+
 
     @Override
     public void update(Observable observable, Object data) {
@@ -100,8 +102,35 @@ public class AsyncImageView extends CacheableImageView implements Observer {
     final static int STATUS_DISPLAY = 1;
     final static int STATUS_EMPTY = 0;
     boolean isAttached;
-    private boolean isCircle;
+    private Shape mShape = Shape.SQUARE;
     private int status;
+
+    public enum Shape {
+        SQUARE(0), CIRCLE(1), ROUNDED(2);
+
+        private int value = 0;
+
+        private Shape(int value) {    //    必须是private的，否则编译错误
+            this.value = value;
+        }
+
+        public static Shape valueOf(int value) {    //    手写的从int到enum的转换函数
+            switch (value) {
+                case 0:
+                    return SQUARE;
+                case 1:
+                    return CIRCLE;
+                case 2:
+                    return ROUNDED;
+                default:
+                    return null;
+            }
+        }
+
+        public int value() {
+            return this.value;
+        }
+    }
 
     public AsyncImageView(Context context) {
         super(context);
@@ -133,8 +162,20 @@ public class AsyncImageView extends CacheableImageView implements Observer {
             return;
         }
 
-        if (isCircle && defaultDrawable instanceof BitmapDrawable) {
-            this.mDefaultDrawable = new CircleBitmapDrawable(getResources(), ((BitmapDrawable) defaultDrawable).getBitmap());
+        if (defaultDrawable instanceof BitmapDrawable) {
+
+            switch (mShape) {
+                case SQUARE:
+                    this.mDefaultDrawable = defaultDrawable;
+                    break;
+                case CIRCLE:
+                    this.mDefaultDrawable = new CircleBitmapDrawable(getResources(), ((BitmapDrawable) defaultDrawable).getBitmap());
+                    break;
+                case ROUNDED:
+                    this.mDefaultDrawable = new RadiusBitmapDrawable(getResources(), ((BitmapDrawable) defaultDrawable).getBitmap(), mRadius);
+                    break;
+            }
+
         } else {
             this.mDefaultDrawable = defaultDrawable;
         }
@@ -143,18 +184,41 @@ public class AsyncImageView extends CacheableImageView implements Observer {
 
     public void setImageDrawable(Drawable drawable) {
 
-        if (isCircle && drawable instanceof BitmapDrawable) {
-            super.setImageDrawable(new CircleBitmapDrawable(getResources(), ((BitmapDrawable) drawable).getBitmap()));
+        if (drawable instanceof BitmapDrawable) {
+            switch (mShape) {
+                case SQUARE:
+                    super.setImageDrawable(drawable);
+                    break;
+                case CIRCLE:
+                    super.setImageDrawable(new CircleBitmapDrawable(getResources(), ((BitmapDrawable) drawable).getBitmap()));
+                    break;
+                case ROUNDED:
+                    super.setImageDrawable(new RadiusBitmapDrawable(getResources(), ((BitmapDrawable) drawable).getBitmap(), mRadius));
+                    break;
+            }
+
         } else {
             super.setImageDrawable(drawable);
         }
 
     }
 
-    public void setCircle(boolean isCircle){
-        this.isCircle = isCircle;
+    public Shape getShape() {
+        return mShape;
     }
 
+    public void setShape(Shape shape) {
+        this.mShape = shape;
+    }
+
+
+    public float getRadius() {
+        return mRadius;
+    }
+
+    public void setRadius(float radius) {
+        this.mRadius = radius;
+    }
 
     public void clean() {
         this.mResource = null;
@@ -178,7 +242,7 @@ public class AsyncImageView extends CacheableImageView implements Observer {
             status = STATUS_EMPTY;
         }
 
-        if(getDrawable() == mDefaultDrawable){
+        if (getDrawable() == mDefaultDrawable) {
             status = STATUS_EMPTY;
         }
 
@@ -188,12 +252,19 @@ public class AsyncImageView extends CacheableImageView implements Observer {
             if (mResource != null && mResource.getUri() != null && ResourceHandler.getInstance().containsInMemoryCache(mResource)) {
                 final BitmapDrawable drawable = ResourceHandler.getInstance().getDrawable(mResource);
                 if (drawable != null && drawable.getBitmap() != null) {
-                    if (isCircle) {
-                        setImageDrawable(new CircleBitmapDrawable(getResources(), drawable.getBitmap()));
-                    } else {
-                        setImageDrawable(drawable);
-                        invalidate();
+
+                    switch (mShape) {
+                        case SQUARE:
+                            setImageDrawable(drawable);
+                            break;
+                        case CIRCLE:
+                            setImageDrawable(new CircleBitmapDrawable(getResources(), drawable.getBitmap()));
+                            break;
+                        case ROUNDED:
+                            setImageDrawable(new RadiusBitmapDrawable(getResources(), drawable.getBitmap(), mRadius));
+                            break;
                     }
+
                     status = STATUS_DISPLAY;
 
                 } else {
@@ -273,10 +344,17 @@ public class AsyncImageView extends CacheableImageView implements Observer {
                             if (imageView.getResource() == null || !imageView.getResource().equals(mResource))
                                 return;
 
-                            if (imageView.isCircle)
-                                imageView.setImageDrawable(new CircleBitmapDrawable(imageView.getResources(), drawable.getBitmap()));
-                            else
-                                imageView.setImageDrawable(drawable);
+                            switch (imageView.mShape) {
+                                case SQUARE:
+                                    imageView.setImageDrawable(drawable);
+                                    break;
+                                case CIRCLE:
+                                    imageView.setImageDrawable(new CircleBitmapDrawable(imageView.getResources(), drawable.getBitmap()));
+                                    break;
+                                case ROUNDED:
+                                    imageView.setImageDrawable(new RadiusBitmapDrawable(imageView.getResources(), drawable.getBitmap(), imageView.mRadius));
+                                    break;
+                            }
 
                             imageView.status = STATUS_DISPLAY;
                         }
@@ -289,10 +367,17 @@ public class AsyncImageView extends CacheableImageView implements Observer {
                             if (imageView.getResource() == null || !imageView.getResource().equals(mResource))
                                 return;
 
-                            if (imageView.isCircle)
-                                imageView.setImageDrawable(new CircleBitmapDrawable(imageView.getResources(), drawable.getBitmap()));
-                            else
-                                imageView.setImageDrawable(drawable);
+                            switch (imageView.mShape) {
+                                case SQUARE:
+                                    imageView.setImageDrawable(drawable);
+                                    break;
+                                case CIRCLE:
+                                    imageView.setImageDrawable(new CircleBitmapDrawable(imageView.getResources(), drawable.getBitmap()));
+                                    break;
+                                case ROUNDED:
+                                    imageView.setImageDrawable(new RadiusBitmapDrawable(imageView.getResources(), drawable.getBitmap(), imageView.mRadius));
+                                    break;
+                            }
 
                             imageView.status = STATUS_DISPLAY;
                         }

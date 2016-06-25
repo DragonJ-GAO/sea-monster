@@ -120,9 +120,10 @@ public class OkHttpHandler implements HttpHandler {
 
     private Request obtainRequest(AbstractHttpRequest absHttpRequest) {
         Request.Builder requestBuilder = null;
-        ParamPair[] paramPairs = absHttpRequest.getAllParams();
+
 
         absHttpRequest.processReadyRequest(absHttpRequest);
+        ParamPair[] paramPairs = absHttpRequest.getAllParams();
 
         if (absHttpRequest.getMethod() == AbstractHttpRequest.GET_METHOD) {
             if (paramPairs != null) {
